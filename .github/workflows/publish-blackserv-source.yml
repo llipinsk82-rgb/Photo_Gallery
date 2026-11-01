@@ -22,6 +22,9 @@ jobs:
           git -C source apply --check ../patches/blackserv-gallery-day-selection.patch
           git -C source apply ../patches/blackserv-gallery-day-selection.patch
           git -C source add -A
+          # The CI workflows live in the feature branch; the source snapshot stores app code only.
+          # Pretrained model weights are downloaded at runtime, not required as source files.
+          git -C source rm -r --cached -- .github/workflows models
           git -C source config user.name "github-actions[bot]"
           git -C source config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C source write-tree > "$RUNNER_TEMP/blackserv-tree-sha"
