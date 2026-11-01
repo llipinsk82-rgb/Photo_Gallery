@@ -9,6 +9,10 @@ on:
       - .github/workflows/build-blackserv-gallery.yml
   workflow_dispatch:
 
+concurrency:
+  group: blackserv-gallery-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-and-build:
     name: Tests and Android APK
@@ -47,6 +51,9 @@ jobs:
       - name: Run selection and batch tests
         working-directory: source
         run: ./gradlew :app:testDebugUnitTest --no-daemon
+      - name: Compile date-selection interaction tests
+        working-directory: source
+        run: ./gradlew :app:assembleDebugAndroidTest --no-daemon
       - name: Assemble experimental APK
         working-directory: source
         run: ./gradlew :app:assembleRelease --no-daemon
@@ -67,28 +74,3 @@ jobs:
           name: blackserv-test-reports
           path: source/app/build/reports/tests/
           if-no-files-found: ignore
-
-  publish-source:
-    name: Publish standalone source branch
-    needs: test-and-build
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Prepare full fork source
-        run: |
-          git clone --no-checkout --depth 1 https://github.com/Bn5prS/Photon_Gallery.git source
-          git -C source fetch --depth 1 origin 382c7a28fbda1907d76d12a43f604ed6d50b181e
-          git -C source checkout --detach FETCH_HEAD
-          git -C source apply ../patches/blackserv-gallery-day-selection.patch
-          git -C source config user.name "github-actions[bot]"
-          git -C source config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git -C source add -A
-          git -C source commit -m "feat: BlackServ Gallery with daily album selection"
-      - name: Push source as a new branch without overwriting main
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git -C source remote add blackserv "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git -C source push blackserv HEAD:refs/heads/source/blackserv-gallery
