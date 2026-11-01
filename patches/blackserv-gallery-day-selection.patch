@@ -1,5 +1,5 @@
 diff --git a/app/build.gradle.kts b/app/build.gradle.kts
-index 5a788a6..30360ce 100644
+index 5a788a6..9d166cc 100644
 --- a/app/build.gradle.kts
 +++ b/app/build.gradle.kts
 @@ -13,11 +13,11 @@ android {
@@ -12,8 +12,8 @@ index 5a788a6..30360ce 100644
          targetSdk = 37
 -        versionCode = 11
 -        versionName = "3.0.0"
-+        versionCode = 12
-+        versionName = "3.0.0-blackserv.1"
++        versionCode = 13
++        versionName = "3.0.0-blackserv.2"
  
          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
          
@@ -26,6 +26,58 @@ index 5a788a6..30360ce 100644
          }
      }
  }
+diff --git a/app/src/androidTest/java/com/inferno/gallery/ui/components/TimelineSectionHeaderTest.kt b/app/src/androidTest/java/com/inferno/gallery/ui/components/TimelineSectionHeaderTest.kt
+new file mode 100644
+index 0000000..7924cbe
+--- /dev/null
++++ b/app/src/androidTest/java/com/inferno/gallery/ui/components/TimelineSectionHeaderTest.kt
+@@ -0,0 +1,46 @@
++package com.inferno.gallery.ui.components
++
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.ui.test.assertHasClickAction
++import androidx.compose.ui.test.junit4.createComposeRule
++import androidx.compose.ui.test.onNodeWithTag
++import androidx.compose.ui.test.onNodeWithText
++import androidx.compose.ui.test.performClick
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertTrue
++import org.junit.Rule
++import org.junit.Test
++
++class TimelineSectionHeaderTest {
++    @get:Rule val composeRule = createComposeRule()
++
++    @Test fun tappingDateTitleSelectsWholeDay() {
++        var selections = 0
++        composeRule.setContent {
++            MaterialTheme {
++                TimelineSectionHeader(title = "October 28, 2026", onSelectDay = { selections++ })
++            }
++        }
++
++        composeRule.onNodeWithText("October 28, 2026").assertHasClickAction().performClick()
++        composeRule.runOnIdle { assertEquals(1, selections) }
++    }
++
++    @Test fun daySelectionIconIsLeftOfDateAndRemainsTappable() {
++        var selections = 0
++        composeRule.setContent {
++            MaterialTheme {
++                TimelineSectionHeader(title = "October 28, 2026", onSelectDay = { selections++ })
++            }
++        }
++
++        val icon = composeRule.onNodeWithTag("day_select_icon", useUnmergedTree = true)
++            .fetchSemanticsNode().boundsInRoot
++        val date = composeRule.onNodeWithText("October 28, 2026", useUnmergedTree = true)
++            .fetchSemanticsNode().boundsInRoot
++        assertTrue("Day select icon should be to the left of the date", icon.right <= date.left)
++
++        composeRule.onNodeWithTag("day_selection_header").performClick()
++        composeRule.runOnIdle { assertEquals(1, selections) }
++    }
++}
 diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
 index 7f67476..ecfb88d 100644
 --- a/app/src/main/AndroidManifest.xml
@@ -588,18 +640,27 @@ index bc73b8b..77bcf14 100644
                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                  letterSpacing = 0.5.sp
 diff --git a/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt b/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt
-index cb82f60..c7cf818 100644
+index cb82f60..bc4c259 100644
 --- a/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt
 +++ b/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt
-@@ -55,6 +55,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
- import androidx.compose.foundation.shape.CircleShape
- import androidx.compose.foundation.shape.RoundedCornerShape
- import androidx.compose.material3.Icon
-+import androidx.compose.material3.IconButton
- import androidx.compose.material3.MaterialTheme
- import androidx.compose.material3.Surface
- import androidx.compose.material3.Text
-@@ -268,7 +269,11 @@ fun PhotonGrid(
+@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.aspectRatio
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.lazy.grid.GridCells
+@@ -90,6 +91,8 @@ import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.platform.LocalDensity
+ import androidx.compose.ui.platform.LocalHapticFeedback
+ import androidx.compose.ui.res.vectorResource
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.semantics.Role
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.foundation.layout.Spacer
+@@ -268,7 +271,11 @@ fun PhotonGrid(
                                          pagedMedia[item.sourceIndex]
                                      }
                                      if (viewMode != ViewMode.Immersive) {
@@ -612,7 +673,7 @@ index cb82f60..c7cf818 100644
                                      }
                                  }
                                  is MosaicDisplayItem.BigTileItem -> {
-@@ -501,7 +506,8 @@ fun PhotonGrid(
+@@ -501,7 +508,8 @@ fun PhotonGrid(
                                          stiffness = Spring.StiffnessMediumLow
                                      )
                                  ),
@@ -622,7 +683,7 @@ index cb82f60..c7cf818 100644
                              )
                          } else if (listItem is GalleryListItem.Item) {
                              val item = listItem.galleryItem
-@@ -597,7 +603,8 @@ fun PhotonGrid(
+@@ -597,7 +605,8 @@ fun PhotonGrid(
  fun TimelineSectionHeader(
      title: String,
      modifier: Modifier = Modifier,
@@ -632,24 +693,42 @@ index cb82f60..c7cf818 100644
  ) {
      val isCenter = alignment == "CENTER"
      Box(
-@@ -615,8 +622,21 @@ fun TimelineSectionHeader(
+@@ -608,6 +617,18 @@ fun TimelineSectionHeader(
+                 end = 16.dp,
+                 top = 16.dp,
+                 bottom = 8.dp
++            )
++            .heightIn(min = 56.dp)
++            .then(
++                if (onSelectDay != null) {
++                    Modifier
++                        .testTag("day_selection_header")
++                        .clickable(
++                            onClickLabel = "Select or deselect all photos from $title",
++                            role = Role.Button,
++                            onClick = onSelectDay
++                        )
++                } else Modifier
+             ),
+         contentAlignment = if (isCenter) Alignment.Center else Alignment.CenterStart
+     ) {
+@@ -615,8 +636,20 @@ fun TimelineSectionHeader(
              text = title,
              style = TimelineDateHeaderStyle,
              color = MaterialTheme.colorScheme.onSurface,
-+            modifier = if (onSelectDay != null) Modifier.padding(end = 56.dp) else Modifier,
++            modifier = if (onSelectDay != null) Modifier.padding(start = 52.dp) else Modifier,
              textAlign = if (isCenter) androidx.compose.ui.text.style.TextAlign.Center else androidx.compose.ui.text.style.TextAlign.Start
          )
 +        if (onSelectDay != null) {
-+            IconButton(
-+                onClick = onSelectDay,
-+                modifier = Modifier.align(Alignment.CenterEnd)
-+            ) {
-+                Icon(
-+                    imageVector = ImageVector.vectorResource(R.drawable.ic_ms_select_all),
-+                    contentDescription = "Select or deselect all photos from $title",
-+                    tint = MaterialTheme.colorScheme.primary
-+                )
-+            }
++            Icon(
++                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_select_all),
++                contentDescription = null,
++                modifier = Modifier
++                    .align(Alignment.CenterStart)
++                    .size(32.dp)
++                    .testTag("day_select_icon"),
++                tint = MaterialTheme.colorScheme.primary
++            )
 +        }
      }
  }
