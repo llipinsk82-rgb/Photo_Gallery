@@ -1,0 +1,124 @@
+package com.inferno.gallery.ui
+
+import android.net.FakeUri
+import com.inferno.gallery.data.AlbumLayoutMode
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class AlbumLayoutAndSortingTest {
+
+    private fun createBucket(name: String, count: Int, maxDate: Long, sizeBytes: Long = 1000L): AlbumBucket {
+        return AlbumBucket(
+            bucketName = name,
+            coverUri = FakeUri(),
+            itemCount = count,
+            totalSizeBytes = sizeBytes,
+            maxDate = maxDate,
+            defaultCoverUri = FakeUri()
+        )
+    }
+
+    @Test
+    fun testAlbumLayoutModeEnumValues() {
+        val modes = AlbumLayoutMode.values()
+        assertEquals(2, modes.size)
+        assertTrue(modes.contains(AlbumLayoutMode.GRID))
+        assertTrue(modes.contains(AlbumLayoutMode.LIST))
+    }
+
+    @Test
+    fun testAlbumLayoutModeResolution() {
+        fun resolveLayout(name: String?): AlbumLayoutMode = when (name) {
+            AlbumLayoutMode.LIST.name -> AlbumLayoutMode.LIST
+            else -> AlbumLayoutMode.GRID
+        }
+
+        assertEquals(AlbumLayoutMode.GRID, resolveLayout("GRID"))
+        assertEquals(AlbumLayoutMode.GRID, resolveLayout("GRID_2_COL"))
+        assertEquals(AlbumLayoutMode.GRID, resolveLayout("GRID_3_COL"))
+        assertEquals(AlbumLayoutMode.LIST, resolveLayout("LIST"))
+        assertEquals(AlbumLayoutMode.GRID, resolveLayout(null))
+        assertEquals(AlbumLayoutMode.GRID, resolveLayout("UNKNOWN"))
+    }
+
+    @Test
+    fun testAlbumSortingByName() {
+        val b1 = createBucket("Vacation", 10, 1000L)
+        val b2 = createBucket("animals", 25, 2000L)
+        val b3 = createBucket("Family", 5, 3000L)
+        val list = listOf(b1, b2, b3)
+
+        val nameAsc = list.sortedBy { it.bucketName.lowercase() }
+        assertEquals(listOf("animals", "Family", "Vacation"), nameAsc.map { it.bucketName })
+
+        val nameDesc = list.sortedByDescending { it.bucketName.lowercase() }
+        assertEquals(listOf("Vacation", "Family", "animals"), nameDesc.map { it.bucketName })
+    }
+
+    @Test
+    fun testAlbumSortingByDateModified() {
+        val b1 = createBucket("Album1", 10, 1000L)
+        val b2 = createBucket("Album2", 25, 3000L)
+        val b3 = createBucket("Album3", 5, 2000L)
+        val list = listOf(b1, b2, b3)
+
+        val dateDesc = list.sortedByDescending { it.maxDate }
+        assertEquals(listOf("Album2", "Album3", "Album1"), dateDesc.map { it.bucketName })
+
+        val dateAsc = list.sortedBy { it.maxDate }
+        assertEquals(listOf("Album1", "Album3", "Album2"), dateAsc.map { it.bucketName })
+    }
+
+    @Test
+    fun testAlbumSortingByItemCount() {
+        val b1 = createBucket("Few", 3, 1000L)
+        val b2 = createBucket("Many", 120, 2000L)
+        val b3 = createBucket("Medium", 42, 3000L)
+        val list = listOf(b1, b2, b3)
+
+        val countDesc = list.sortedByDescending { it.itemCount }
+        assertEquals(listOf("Many", "Medium", "Few"), countDesc.map { it.bucketName })
+
+        val countAsc = list.sortedBy { it.itemCount }
+        assertEquals(listOf("Few", "Medium", "Many"), countAsc.map { it.bucketName })
+    }
+
+    @Test
+    fun testCameraAlbumFollowsSortOrder() {
+        val b1 = createBucket("Animals", 10, 1000L)
+        val b2 = createBucket("Camera", 50, 2000L)
+        val b3 = createBucket("Zebra", 5, 3000L)
+        val list = listOf(b1, b2, b3)
+
+        // When sorted by NameAsc, Animals should be first, not Camera
+        val nameAsc = list.sortedBy { it.bucketName.lowercase() }
+        assertEquals(listOf("Animals", "Camera", "Zebra"), nameAsc.map { it.bucketName })
+
+        // When sorted by NameDesc, Zebra should be first
+        val nameDesc = list.sortedByDescending { it.bucketName.lowercase() }
+        assertEquals(listOf("Zebra", "Camera", "Animals"), nameDesc.map { it.bucketName })
+
+        // When sorted by CountAsc, Zebra (5) should be first
+        val countAsc = list.sortedBy { it.itemCount }
+        assertEquals(listOf("Zebra", "Animals", "Camera"), countAsc.map { it.bucketName })
+    }
+
+    @Test
+    fun testSortOrderEnumValues() {
+        val orders = SortOrder.values()
+        assertTrue(orders.contains(SortOrder.DateModifiedNewToOld))
+        assertTrue(orders.contains(SortOrder.DateModifiedOldToNew))
+        assertTrue(orders.contains(SortOrder.NewToOld))
+        assertTrue(orders.contains(SortOrder.OldToNew))
+    }
+
+    @Test
+    fun testMediaQueryBuilderOrderClauses() {
+        assertEquals("ORDER BY cm.dateAdded DESC, cm.id DESC", com.inferno.gallery.data.MediaQueryBuilder.buildOrderClause("NewToOld"))
+        assertEquals("ORDER BY cm.dateAdded ASC, cm.id ASC", com.inferno.gallery.data.MediaQueryBuilder.buildOrderClause("OldToNew"))
+        assertEquals("ORDER BY cm.dateModified DESC, cm.id DESC", com.inferno.gallery.data.MediaQueryBuilder.buildOrderClause("DateModifiedNewToOld"))
+        assertEquals("ORDER BY cm.dateModified ASC, cm.id ASC", com.inferno.gallery.data.MediaQueryBuilder.buildOrderClause("DateModifiedOldToNew"))
+        assertEquals("ORDER BY cm.name DESC, cm.id DESC", com.inferno.gallery.data.MediaQueryBuilder.buildOrderClause("NameDesc"))
+    }
+}

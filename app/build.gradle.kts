@@ -1,0 +1,208 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+}
+
+android {
+    namespace = "com.inferno.gallery"
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = "eu.blackserv.gallery"
+        minSdk = 31
+        targetSdk = 37
+        versionCode = 12
+        versionName = "3.0.0-blackserv.1"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = true
+        }
+    }
+
+    val keyPropertiesFile = rootProject.file("key.properties")
+    val hasReleaseKeystore = keyPropertiesFile.exists()
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                val ks = Properties()
+                ks.load(FileInputStream(keyPropertiesFile))
+                val keystorePath = ks["storeFile"] as String
+                val rootKsFile = rootProject.file(keystorePath)
+                storeFile = if (rootKsFile.exists()) rootKsFile else file(keystorePath)
+                storePassword = ks["storePassword"] as String
+                keyAlias = ks["keyAlias"] as String
+                keyPassword = ks["keyPassword"] as String
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            // Install alongside the release app so device testing never touches real app data
+            applicationIdSuffix = ".debug"
+        }
+        create("optimizedDebug") {
+            initWith(buildTypes.getByName("release"))
+            matchingFallbacks += listOf("release")
+            signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".debug"
+            isDebuggable = false
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val abi = output.filters.find { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }?.identifier ?: "universal"
+            output.outputFileName.set("BlackServGallery-$abi.apk")
+        }
+    }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
+ksp {
+    // Force Kotlin codegen — avoids 'unexpected jvm signature V' KSP bug with suspend Unit DAOs
+    arg("room.generateKotlin", "true")
+}
+
+dependencies {
+    // ── Compose BOM (aligns UI / Foundation / Runtime versions) ──
+    implementation(platform(libs.androidx.compose.bom))
+
+    // ── AndroidX Core ──
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // ── Lifecycle ──
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // Installs src/main/baseline-prof.txt on first run (AOT-compiles the grid hot path).
+    // Without this the profile is packaged but never installed, i.e. a no-op.
+    implementation(libs.androidx.profileinstaller)
+
+    // ── DataStore ──
+    implementation(libs.androidx.datastore.preferences)
+
+    // ── Compose UI ──
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+
+    // ── Material 3 Expressive (explicit version ≥ 1.4.0, overrides BOM) ──
+    implementation(libs.androidx.compose.material3)
+
+    // ── Compose Animation (SharedTransitionScope, spring physics) ──
+    implementation(libs.androidx.compose.animation)
+
+    // ── Navigation ──
+    implementation(libs.androidx.navigation.compose)
+
+    // ── Graphics Shapes (RoundedPolygon, Morph — for shape morphing) ──
+    implementation(libs.androidx.graphics.shapes)
+
+    // ── Coil 3 — Image Loading ──
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.video)
+    implementation(libs.coil.gif)
+    implementation(libs.coil.svg)
+
+    // ── EXIF ──
+    implementation(libs.androidx.exifinterface)
+
+    // ── Room — Database (stable 2.6.1, FTS5 support) ──
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.room.paging)
+    ksp(libs.room.compiler)
+
+    // ── Paging 3 ──
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
+
+    // ── ML Kit (OCR & Face Detection) ──
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.face.detection)
+
+    // ── ONNX Runtime ──
+    implementation(libs.onnxruntime.android)
+
+
+    // ── WorkManager ──
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // ── Testing ──
+    testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.junit)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // ── Media3 (ExoPlayer) ──
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+
+    // ── Biometric (Private Space auth) ──
+    implementation(libs.androidx.biometric)
+
+    // ── osmdroid (OpenStreetMap — Photo Map) ──
+    implementation(libs.osmdroid)
+
+
+    // ── Lottie Animations ──
+    implementation(libs.lottie.compose)
+
+    implementation(libs.material)
+}

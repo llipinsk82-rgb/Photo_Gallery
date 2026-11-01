@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A new BlackServ tile: framed photo with a prominent selected-day check. -->
+    <path android:fillColor="#EAF8F5" android:pathData="M34,27h40c5,0 9,4 9,9v37c0,5 -4,9 -9,9h-40c-5,0 -9,-4 -9,-9v-37c0,-5 4,-9 9,-9z" />
+    <path android:fillColor="#1D4C5E" android:pathData="M36,34h36c2,0 4,2 4,4v29c0,2 -2,4 -4,4h-36c-2,0 -4,-2 -4,-4v-29c0,-2 2,-4 4,-4z" />
+    <path android:fillColor="#9BE4B5" android:pathData="M35,65l13,-15 8,8 7,-7 12,14v3h-40z" />
+    <path android:fillColor="#EAF8F5" android:pathData="M45,40a5,5 0,1 0,0.01 0z" />
+    <path android:fillColor="#B4FF76" android:pathData="M70,59a15,15 0,1 0,0.01 0z" />
+    <path android:fillColor="#102638" android:pathData="M62,73l6,6 11,-13 -3,-3 -8,10 -3,-3z" />
+</vector>

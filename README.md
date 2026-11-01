@@ -1,0 +1,131 @@
+<div align="center">
+
+<img src="screenshots/logo.png?v=2" width="96" alt="Photon Gallery Logo" />
+
+# Photon Gallery
+
+**An open-source, offline Android gallery designed around privacy, performance, and stunning visuals.**
+
+<br/>
+
+[![Stars](https://img.shields.io/github/stars/Bn5prS/Photon_Gallery?style=for-the-badge&logo=github&color=6750A4&logoColor=white&labelColor=1C1B1F)](https://github.com/Bn5prS/Photon_Gallery/stargazers)
+[![Downloads](https://img.shields.io/github/downloads/Bn5prS/Photon_Gallery/total?style=for-the-badge&logo=android&color=4CAF50&logoColor=white&labelColor=1C1B1F)](https://github.com/Bn5prS/Photon_Gallery/releases)
+[![Views](https://hits.sh/github.com/Bn5prS/Photon_Gallery.svg?style=for-the-badge&color=6750A4&labelColor=1C1B1F&label=Views)](https://github.com/Bn5prS/Photon_Gallery)
+[![Min SDK](https://img.shields.io/badge/Android_12%2B-API_31-3DDC84?style=for-the-badge&logo=android&logoColor=white&labelColor=1C1B1F)](https://developer.android.com/about/versions/12)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white&labelColor=1C1B1F)](https://kotlinlang.org)
+[![License](https://img.shields.io/badge/License-GPL_v3-4285F4?style=for-the-badge&logo=gnu&logoColor=white&labelColor=1C1B1F)](LICENSE)
+
+<br/>
+
+<a href="https://github.com/Bn5prS/Photon_Gallery/releases/latest">
+  <img src="screenshots/download_badge.svg" width="180" alt="Download Latest Release" />
+</a>
+
+<br/><br/>
+
+
+</div>
+
+---
+
+## ✨ Screenshots
+
+| Home | Albums | Viewer | Video |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/01-home-screen.jpg?v=4" width="180" /> | <img src="screenshots/02-album-screen.jpg" width="180" /> | <img src="screenshots/03-image-viewer.jpg" width="180" /> | <img src="screenshots/04-video-player.jpg" width="180" /> |
+
+| Multi-Select | Photo Editor | Stitch Tool | Settings |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/05-multi-select.jpg?v=4" width="180" /> | <img src="screenshots/06-photo-editor.jpg?v=4" width="180" /> | <img src="screenshots/07-stitch-tool.jpg?v=4" width="180" /> | <img src="screenshots/08-settings.jpg?v=4" width="180" /> |
+
+---
+
+## 🚀 Features
+
+- **Fluid Media Browsing** — Responsive grid with smooth animations, customizable column layouts, and instant loading.
+- **Material 3 Expressive UI** — Shape-morphing animations, spring physics, variable typography, and Material You dynamic theming.
+- **Full-Screen Viewer & Video Player** — Pinch-to-zoom, background blur, EXIF inspector, and advanced video controls.
+- **On-Device Smart Search & OCR** — Natural-language semantic search and on-device text recognition running 100% locally.
+- **Photo Map & Places** — Geotagged media exploration on an interactive offline-capable map.
+- **Albums & Collections** — Smart auto-albums, custom pinning, folder exclusions, and custom album covers.
+- **People & Face Grouping** — On-device facial recognition, automatic clustering, and smart merge suggestions running 100% locally.
+- **Photo Editor & Markup Tools** — Drawing and annotations (pen, highlighter, neon brush, blur redaction, shapes, and interactive text), filters, color adjustments, and collage stitching.
+- **Duplicate Cleaner & Recycle Bin** — Perceptual hash duplicate detection and soft-delete trash with auto-cleanup.
+- **Private Space (Vault)** — Biometric-locked hidden vault isolated from the main gallery.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **UI** | Jetpack Compose, Material 3 Expressive, Material Symbols icons, Google Sans Flex / Outfit & Urbanist |
+| **Architecture** | MVVM, ViewModel, Room (SQLite + FTS5) |
+| **Image Loading** | Coil 3 (GIF, WebP, HEIF, SVG, Video thumbnails) |
+| **AI / ML** | ONNX Runtime (MobileCLIP), ML Kit (OCR) |
+| **Navigation** | Compose Navigation with Shared Element Transitions |
+| **Maps** | osmdroid (OpenStreetMap, offline-capable) |
+| **Media** | Media3 / ExoPlayer |
+| **Background** | WorkManager |
+| **Min / Target SDK** | API 31 (Android 12) / API 37 |
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+- Android Studio Meerkat or newer
+- JDK 11+
+- Android SDK with API 37
+
+### Build & Deploy
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/Bn5prS/Photon_Gallery.git
+cd Photon_Gallery
+
+# 2. Verify the build compiles
+./gradlew compileDebugKotlin
+
+# 3. Assemble a signed release APK
+./gradlew assembleRelease
+
+# 4. Install on connected device
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+> **Note:** A signing config is required for release builds. See Android's [signing documentation](https://developer.android.com/studio/publish/app-signing) to set one up.
+
+---
+
+## 🤝 Contributing
+
+Contributions are warmly welcomed! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines on project architecture, code style, testing requirements, and pull request workflows.
+
+Quick start:
+1. **Fork** the repository
+2. **Create a branch**: `git checkout -b feature/your-feature`
+3. **Commit your changes**: `git commit -m "feat: add your feature"`
+4. **Verify tests & lint**: `./gradlew lint testDebugUnitTest`
+---
+
+## 📄 License
+
+Photon Gallery is licensed under the **GNU General Public License v3.0 (GPLv3)** with **Section 7 Anti-Theft & Attribution Provisions**:
+- **Attribution & Origin**: Original copyright notices, author attributions (`Bn5prS`), and repository links must remain intact in all forks and user interfaces.
+- **No Misrepresentation**: You may not claim authorship of the original code, UI designs, or on-device AI algorithms.
+- **Trademark & Branding**: The name "Photon Gallery", project logo, and branding may not be used for derived works without explicit permission. Forks must use a distinct name, icon, and package identifier.
+- **Anti-Repackaging**: Re-packaging the app with ads, monetization trackers, or paid paywalls on app stores (Google Play, etc.) is strictly prohibited.
+
+See the [LICENSE](LICENSE) file for complete legal terms. Third-party font and icon licenses are documented in [LICENSES.md](LICENSES.md).
+
+---
+
+<div align="center">
+
+Built with Kotlin & Jetpack Compose
+
+[![GitHub](https://img.shields.io/badge/GitHub-Bn5prS%2FPhoton__Gallery-6750A4?style=flat&logo=github&logoColor=white)](https://github.com/Bn5prS/Photon_Gallery)
+
+</div>

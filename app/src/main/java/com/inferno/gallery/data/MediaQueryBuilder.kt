@@ -1,0 +1,211 @@
+package com.inferno.gallery.data
+
+/**
+ * Pure-function SQL query builder for media queries.
+ * Extracted from GalleryViewModel for testability.
+ *
+ * All methods are stateless and produce SQL fragments + bind args
+ * that can be verified without Android framework dependencies.
+ */
+object MediaQueryBuilder {
+
+    private const val NOT_HIDDEN = "cm.bucketName != 'Trash'"
+
+    data class QueryConditions(
+        val conditions: List<String>,
+        val args: List<Any>
+    )
+
+    /**
+     * Builds SQL WHERE conditions and bind args for media queries.
+     *
+     * @param bucket       The target bucket name (e.g. "Camera", "Favorites", "search_text")
+     * @param filterIndex  The dock filter index (0=All, 1=Camera, 2=Screenshots)
+     * @param excluded     Set of folder names to exclude
+     * @param favIds       Set of favorite media ID strings
+     * @param ftsIds       List of media ID strings from FTS text search
+     * @param smartIds     List of media ID strings from smart/semantic search
+     */
+    fun buildMediaConditions(
+        bucket: String?,
+        filterIndex: Int,
+        excluded: Set<String> = emptySet(),
+        favIds: Set<String> = emptySet(),
+        ftsIds: List<String> = emptyList(),
+        smartIds: List<String> = emptyList()
+    ): QueryConditions {
+        val conditions = mutableListOf<String>()
+        val args = mutableListOf<Any>()
+
+        val folderName: String? = null
+
+        when {
+            bucket == BucketNames.SEARCH_TEXT -> {
+                if (ftsIds.isEmpty()) {
+                    conditions.add("cm.id IN (0)")
+                } else {
+                    conditions.add("cm.id IN (${ftsIds.joinToString(",")})")
+                    conditions.add(NOT_HIDDEN)
+                }
+            }
+            bucket == BucketNames.SEARCH_SMART -> {
+                if (smartIds.isEmpty()) {
+                    conditions.add("cm.id IN (0)")
+                } else {
+                    conditions.add("cm.id IN (${smartIds.joinToString(",")})")
+                    conditions.add(NOT_HIDDEN)
+                }
+            }
+            bucket == BucketNames.FAVORITES -> {
+                val numericIds = favIds.mapNotNull { it.toLongOrNull() }
+                if (numericIds.isEmpty()) {
+                    conditions.add("cm.id IN (0)")
+                } else {
+                    conditions.add("cm.id IN (${numericIds.joinToString(",")})")
+                    conditions.add(NOT_HIDDEN)
+                }
+            }
+            bucket == BucketNames.ALL || (bucket == null && folderName == null) -> {
+                if (filterIndex == 1) {
+                    conditions.add("(cm.bucketName = 'Camera' OR cm.bucketName = '100MEDIA' OR cm.filePath LIKE '%/DCIM/Camera/%' OR cm.filePath LIKE '%/DCIM/%')")
+                }
+                conditions.add("cm.bucketName != 'Trash'")
+            }
+            bucket == BucketNames.VIDEOS -> {
+                conditions.add("cm.isVideo = 1")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket?.equals(BucketNames.SCREENSHOTS, ignoreCase = true) == true ||
+            bucket?.equals(BucketNames.SCREENSHOT, ignoreCase = true) == true -> {
+                conditions.add("(cm.bucketName = 'Screenshots' OR cm.bucketName = 'Screenshot' OR cm.filePath LIKE '%/Screenshots/%' OR cm.filePath LIKE '%/Screenshot/%')")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket?.startsWith("place:") == true -> {
+                val placeName = bucket.removePrefix("place:")
+                conditions.add("cm.id IN (SELECT mediaId FROM geocoded_locations WHERE placeName = ?)")
+                args.add(placeName)
+            }
+            bucket?.startsWith("doc:") == true -> {
+                conditions.add("cm.id IN (SELECT mediaId FROM document_classifications WHERE category = ?)")
+                args.add(bucket)
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_RAW -> {
+                conditions.add("(cm.mimeType LIKE '%raw%' OR cm.mimeType LIKE '%dng%' OR cm.name LIKE '%.dng' OR cm.name LIKE '%.raw' OR cm.name LIKE '%.cr2' OR cm.name LIKE '%.nef' OR cm.name LIKE '%.arw' OR cm.name LIKE '%.orf' OR cm.name LIKE '%.raf')")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_PANORAMAS -> {
+                conditions.add("(cm.name LIKE '%PANO%' OR cm.name LIKE '%PANORAMA%' OR cm.filePath LIKE '%PANO%' OR cm.filePath LIKE '%panorama%')")
+                conditions.add("(cm.name NOT LIKE '%PHOTOSPHERE%' AND cm.name NOT LIKE '%_SPHERE%' AND cm.name NOT LIKE '%SPHERE_%' AND cm.name NOT LIKE '%360_PHOTO%' AND cm.name NOT LIKE '%_360.%' AND cm.filePath NOT LIKE '%/PhotoSphere/%' AND cm.filePath NOT LIKE '%/360/%')")
+                conditions.add("cm.id NOT IN (SELECT mediaId FROM photo_spheres WHERE isSphere = 1)")
+                conditions.add("cm.isVideo = 0")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_SLOW_MO -> {
+                conditions.add("(cm.name LIKE '%SLOW%' OR cm.name LIKE '%HFR%' OR cm.filePath LIKE '%slow_motion%') AND cm.isVideo = 1")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_ANIMATIONS -> {
+                conditions.add("(cm.mimeType = 'image/gif' OR cm.name LIKE '%.gif') AND cm.isVideo = 0")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_NIGHT -> {
+                conditions.add("(cm.name LIKE '%_NIGHT%' OR cm.name LIKE '%NIGHT_%' OR cm.name LIKE '%NIGHT.%' OR cm.name LIKE '%NIGHTSIGHT%' OR cm.filePath LIKE '%/Night/%' OR cm.filePath LIKE '%/NightMode/%') AND cm.isVideo = 0")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_PHOTO_SPHERE -> {
+                conditions.add("""
+                    (
+                        (cm.name LIKE '%PHOTOSPHERE%' OR cm.name LIKE '%_SPHERE%' OR cm.name LIKE '%SPHERE_%' OR cm.name LIKE '%360_PHOTO%' OR cm.name LIKE '%_360.%' OR cm.filePath LIKE '%/PhotoSphere/%' OR cm.filePath LIKE '%/360/%')
+                        OR cm.id IN (SELECT mediaId FROM photo_spheres WHERE isSphere = 1)
+                    )
+                """.trimIndent())
+                conditions.add("cm.isVideo = 0")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_PORTRAIT -> {
+                conditions.add("(cm.name LIKE '%PORTRAIT%' OR cm.name LIKE '%_BOKEH%' OR cm.name LIKE '%_DEPTH%' OR cm.filePath LIKE '%/Portrait/%' OR cm.filePath LIKE '%/Portraits/%' OR cm.filePath LIKE '%_PORTRAIT/%') AND cm.isVideo = 0")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_MACRO -> {
+                conditions.add("(cm.name LIKE '%MACRO%' OR cm.name LIKE '%_MACRO%' OR cm.filePath LIKE '%/Macro/%' OR cm.filePath LIKE '%/SuperMacro/%') AND cm.isVideo = 0")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket == BucketNames.MEDIA_TYPE_TIMELAPSE -> {
+                conditions.add("(cm.name LIKE '%TIMELAPSE%' OR cm.name LIKE '%HYPERLAPSE%' OR cm.name LIKE '%TIME_LAPSE%' OR cm.name LIKE 'TL_%' OR cm.name LIKE '%_TL.mp4' OR cm.filePath LIKE '%/Timelapse/%' OR cm.filePath LIKE '%/Hyperlapse/%') AND cm.isVideo = 1")
+                conditions.add(NOT_HIDDEN)
+            }
+            bucket != null -> {
+                conditions.add("cm.bucketName = ?")
+                args.add(bucket)
+            }
+            folderName != null -> {
+                conditions.add("cm.bucketName = ?")
+                args.add(folderName)
+            }
+            else -> {
+                conditions.add(NOT_HIDDEN)
+            }
+        }
+
+        // Always ensure items locked in Private Space (Vault) NEVER appear in any gallery query
+        conditions.add("cm.uriString NOT IN (SELECT originalUri FROM vault_media)")
+        conditions.add("cm.filePath NOT IN (SELECT originalPath FROM vault_media)")
+
+        // Apply excluded folders filter across all feed, search, favorite, media type, and general views
+        val isSpecificAlbum = bucket != null &&
+            bucket != BucketNames.ALL &&
+            bucket != BucketNames.VIDEOS &&
+            !bucket.equals(BucketNames.SCREENSHOTS, ignoreCase = true) &&
+            !bucket.equals(BucketNames.SCREENSHOT, ignoreCase = true) &&
+            bucket != BucketNames.FAVORITES &&
+            bucket != BucketNames.SEARCH_TEXT &&
+            bucket != BucketNames.SEARCH_SMART &&
+            bucket != BucketNames.MEDIA_TYPE_RAW &&
+            bucket != BucketNames.MEDIA_TYPE_PANORAMAS &&
+            bucket != BucketNames.MEDIA_TYPE_SLOW_MO &&
+            bucket != BucketNames.MEDIA_TYPE_ANIMATIONS &&
+            bucket != BucketNames.MEDIA_TYPE_NIGHT &&
+            bucket != BucketNames.MEDIA_TYPE_PHOTO_SPHERE &&
+            bucket != BucketNames.MEDIA_TYPE_PORTRAIT &&
+            bucket != BucketNames.MEDIA_TYPE_MACRO &&
+            bucket != BucketNames.MEDIA_TYPE_TIMELAPSE &&
+            !bucket.startsWith("place:")
+
+        if (!isSpecificAlbum && excluded.isNotEmpty()) {
+            val placeholders = excluded.joinToString(",") { "?" }
+            conditions.add("cm.bucketName NOT IN ($placeholders)")
+            args.addAll(excluded)
+        }
+
+        return QueryConditions(conditions, args)
+    }
+
+    fun buildWhereClause(qc: QueryConditions): String {
+        return if (qc.conditions.isNotEmpty()) "WHERE ${qc.conditions.joinToString(" AND ")} " else ""
+    }
+
+    fun buildOrderClause(order: String): String = when (order) {
+        "NewToOld" -> "ORDER BY cm.dateAdded DESC, cm.id DESC"
+        "OldToNew" -> "ORDER BY cm.dateAdded ASC, cm.id ASC"
+        "DateModifiedNewToOld" -> "ORDER BY cm.dateModified DESC, cm.id DESC"
+        "DateModifiedOldToNew" -> "ORDER BY cm.dateModified ASC, cm.id ASC"
+        "SmallToBig" -> "ORDER BY cm.size ASC, cm.id ASC"
+        "BigToSmall" -> "ORDER BY cm.size DESC, cm.id DESC"
+        "NameAsc" -> "ORDER BY cm.name ASC, cm.id ASC"
+        "NameDesc" -> "ORDER BY cm.name DESC, cm.id DESC"
+        else -> "ORDER BY cm.dateAdded DESC, cm.id DESC"
+    }
+
+    fun buildOrderClause(order: String, bucket: String?, smartIds: List<String>): String {
+        if (bucket == BucketNames.SEARCH_SMART) {
+            val numericIds = smartIds.mapNotNull { it.toLongOrNull() }
+            if (numericIds.isNotEmpty()) {
+                val cases = numericIds.mapIndexed { index, id -> "WHEN $id THEN $index" }
+                    .joinToString(" ")
+                return "ORDER BY CASE cm.id $cases ELSE ${numericIds.size} END, cm.id DESC"
+            }
+        }
+        return buildOrderClause(order)
+    }
+}

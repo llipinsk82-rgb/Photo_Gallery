@@ -1,0 +1,2597 @@
+package com.inferno.gallery.ui
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.ButtonDefaults
+import com.inferno.gallery.ui.theme.ShapeEdgeTop
+import com.inferno.gallery.ui.theme.ShapeMedium
+import com.inferno.gallery.ui.theme.ShapeFull
+import com.inferno.gallery.ui.theme.ShapeExtraLarge
+import com.inferno.gallery.ui.utils.popBackStackSafely
+
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.animation.core.animate
+import kotlinx.coroutines.Job
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.inferno.gallery.data.DockStyle
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButtonDefaults
+import com.inferno.gallery.ui.theme.EditorialPunchyHeadline
+import com.inferno.gallery.ui.theme.mainScreenTitleStyle
+
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.os.Environment
+import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.compose.material3.TextButton
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.Button
+import com.inferno.gallery.ui.components.ExpressiveButton
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.runtime.LaunchedEffect
+import com.inferno.gallery.ui.theme.ShapeExtraLarge
+import com.inferno.gallery.ui.theme.MotionTokens
+import com.inferno.gallery.ui.theme.IconSizeTokens
+import com.inferno.gallery.ui.components.ExpressiveFilledIconButton
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
+import java.io.File
+import androidx.compose.runtime.rememberCoroutineScope
+import com.inferno.gallery.data.SettingsRepository
+import androidx.compose.ui.res.vectorResource
+import com.inferno.gallery.R
+
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun MainAppLayout(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    onPhotoClick: (String, String?, String?) -> Unit,
+    onCreateCollage: (List<String>) -> Unit = {},
+    onCreateStitch: (List<String>) -> Unit = {},
+    onNavigateToVault: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    viewModel: GalleryViewModel = viewModel()
+) {
+    val settingsViewModel: SettingsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+        viewModelStoreOwner = LocalContext.current as androidx.lifecycle.ViewModelStoreOwner
+    )
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectedUris by viewModel.selectedUris.collectAsState()
+    val viewMode by viewModel.viewMode.collectAsState()
+    val sortOrder by viewModel.sortOrder.collectAsState()
+    val albumSortOrder by viewModel.albumSortOrder.collectAsState()
+    val dockStyle by viewModel.dockStyle.collectAsState()
+    val showVideosInDock by viewModel.showVideosInDock.collectAsState()
+    val nestedNavController = rememberNavController()
+
+    var showMenu by remember { mutableStateOf(false) }
+    var showCreateAlbumDialog by remember { mutableStateOf(false) }
+    var newAlbumName by remember { mutableStateOf("") }
+    var settingsActiveSection by remember { mutableStateOf<String?>(null) }
+    val navBackStackEntry by nestedNavController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    LaunchedEffect(currentRoute) {
+        viewModel.setTopBarCollapsed(false)
+    }
+
+
+    val albumNameArg = navBackStackEntry?.arguments?.getString("bucketName")
+    val coroutineScope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    var selectedUrisToDelete by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var showTrashRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showTrashDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    // Collect toast events from ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.toastEvent.collect { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+    val onboardingV210Completed by viewModel.onboardingV210Completed.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    fun checkPhotosPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) == PackageManager.PERMISSION_GRANTED)
+        } else {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    fun checkVideosPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) == PackageManager.PERMISSION_GRANTED)
+        } else {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    fun checkAllFilesPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            true
+        }
+    }
+
+    var photosGranted by remember { mutableStateOf(checkPhotosPermission()) }
+    var videosGranted by remember { mutableStateOf(checkVideosPermission()) }
+    var allFilesGranted by remember { mutableStateOf(checkAllFilesPermission()) }
+    var hasRequestedMediaOnce by remember { mutableStateOf(false) }
+
+    val triggerSync = {
+        val syncWorkRequest = OneTimeWorkRequestBuilder<com.inferno.gallery.workers.MediaSyncWorker>().build()
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "MediaSyncWorker",
+            androidx.work.ExistingWorkPolicy.REPLACE,
+            syncWorkRequest
+        )
+    }
+
+    fun updatePermissionStates() {
+        val wasMediaGranted = photosGranted
+        photosGranted = checkPhotosPermission()
+        videosGranted = checkVideosPermission()
+        allFilesGranted = checkAllFilesPermission()
+        if (!wasMediaGranted && photosGranted) {
+            triggerSync()
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                updatePermissionStates()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val intentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        updatePermissionStates()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        updatePermissionStates()
+    }
+
+    // Separate the trash queue from the existing restore/permanent-delete state.
+    var pendingTrashUris by remember { mutableStateOf<List<String>>(emptyList()) }
+    var trashProgress by remember { mutableStateOf<TrashBatchProgress?>(null) }
+
+    val trashLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val approved = trashProgress?.currentBatch.orEmpty()
+            if (approved.isNotEmpty()) {
+                viewModel.trashSelectedMedia(approved)
+                viewModel.removeSelection(approved)
+                val next = trashProgress?.acceptCurrentBatch()
+                if (next?.isFinished == true) {
+                    Toast.makeText(context, "Moved ${next.completedCount} items to Recycle Bin", Toast.LENGTH_SHORT).show()
+                    trashProgress = null
+                } else {
+                    trashProgress = next
+                }
+            }
+        } else {
+            val completed = trashProgress?.completedCount ?: 0
+            if (completed > 0) {
+                Toast.makeText(context, "Stopped after $completed items. Remaining photos stay selected.", Toast.LENGTH_LONG).show()
+            }
+            trashProgress = null
+        }
+    }
+
+    // Only one platform confirmation request is active; the next batch is issued
+    // after the previous request returns RESULT_OK. Cancellation ends the chain.
+    LaunchedEffect(trashProgress) {
+        val batch = trashProgress?.currentBatch.orEmpty()
+        if (batch.isNotEmpty()) {
+            try {
+                val request = withContext(Dispatchers.IO) {
+                    val intent = android.provider.MediaStore.createTrashRequest(
+                        context.contentResolver, batch.map(Uri::parse), true
+                    )
+                    androidx.activity.result.IntentSenderRequest.Builder(intent.intentSender).build()
+                }
+                trashLauncher.launch(request)
+            } catch (e: Exception) {
+                val completed = trashProgress?.completedCount ?: 0
+                Toast.makeText(context, "Trash request failed after $completed items: ${e.message}", Toast.LENGTH_LONG).show()
+                trashProgress = null
+            }
+        }
+    }
+
+    val restoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val selected = pendingTrashUris.ifEmpty { viewModel.selectedUris.value.toList() }
+            viewModel.restoreSelectedMedia(selected)
+            viewModel.clearSelection()
+        }
+        pendingTrashUris = emptyList()
+    }
+
+    val permanentDeleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val selected = pendingTrashUris.ifEmpty { viewModel.selectedUris.value.toList() }
+            viewModel.deleteSelectedMediaFromDb(selected)
+            viewModel.clearSelection()
+        }
+        pendingTrashUris = emptyList()
+    }
+
+    val hasRequiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        photosGranted && videosGranted
+    } else {
+        photosGranted
+    }
+    
+    if (onboardingV210Completed == null) {
+        Box(modifier = modifier.fillMaxSize().background(Color.Black))
+        return
+    }
+
+    var onboardingFinishedLocally by rememberSaveable { mutableStateOf(false) }
+    val showOnboardingFlow = (onboardingV210Completed == false && !onboardingFinishedLocally)
+
+    if (showOnboardingFlow || !hasRequiredPermissions) {
+        val initialStep = if (hasRequiredPermissions && showOnboardingFlow) 1 else 0
+        PermissionOnboardingScreen(
+            photosGranted = photosGranted,
+            videosGranted = videosGranted,
+            allFilesGranted = allFilesGranted,
+            initialStep = initialStep,
+            onGrantMediaClick = {
+                val activity = context as? android.app.Activity
+                val showRationale = activity?.let {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.READ_MEDIA_IMAGES) ||
+                        androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.READ_MEDIA_VIDEO)
+                    } else {
+                        androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    }
+                } ?: true
+
+                if (hasRequestedMediaOnce && !photosGranted && !showRationale) {
+                    Toast.makeText(context, "Permissions permanently denied. Opening settings...", Toast.LENGTH_LONG).show()
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    intentLauncher.launch(intent)
+                } else {
+                    hasRequestedMediaOnce = true
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.READ_MEDIA_IMAGES,
+                                Manifest.permission.READ_MEDIA_VIDEO,
+                                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                            )
+                        )
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.READ_MEDIA_IMAGES,
+                                Manifest.permission.READ_MEDIA_VIDEO
+                            )
+                        )
+                    } else {
+                        permissionLauncher.launch(
+                            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        )
+                    }
+                }
+            },
+            onGrantAllFilesClick = {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                }
+                intentLauncher.launch(intent)
+            },
+            onContinueClick = {
+                onboardingFinishedLocally = true
+                viewModel.completeOnboarding()
+                triggerSync()
+            },
+            settingsViewModel = settingsViewModel,
+            modifier = modifier
+        )
+        return
+    }
+
+    val isRootTab = currentRoute == "photos" || currentRoute == "videos" || currentRoute == "albums" || currentRoute == "search"
+    val isCollapsibleTopBarActive = isRootTab && !isSelectionMode
+
+    var topBarOffsetY by remember { mutableFloatStateOf(0f) }
+    var topBarHeightPx by remember { mutableFloatStateOf(0f) }
+    var topBarAnimationJob by remember { mutableStateOf<Job?>(null) }
+    var lastScrollDelta by remember { mutableFloatStateOf(0f) }
+
+    val nestedScrollConnection = remember(isCollapsibleTopBarActive, topBarHeightPx) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (!isCollapsibleTopBarActive || topBarHeightPx <= 0f) return Offset.Zero
+
+                val delta = available.y
+
+                // Only cancel animation and track offset when the user is actively dragging
+                if (source == NestedScrollSource.UserInput) {
+                    topBarAnimationJob?.cancel()
+                    topBarAnimationJob = null
+                    lastScrollDelta = delta
+
+                    val prevOffset = topBarOffsetY
+                    val newOffset = (prevOffset + delta).coerceIn(-topBarHeightPx, 0f)
+                    topBarOffsetY = newOffset
+
+                    // Consume the delta used to collapse or expand the top bar
+                    val consumedY = newOffset - prevOffset
+                    return Offset(0f, consumedY)
+                }
+
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (!isCollapsibleTopBarActive || topBarHeightPx <= 0f) return Offset.Zero
+                // If user drags down when at top of list or overscrolling, expand top bar
+                if (source == NestedScrollSource.UserInput && available.y > 0f) {
+                    lastScrollDelta = available.y
+                    val prevOffset = topBarOffsetY
+                    val newOffset = (prevOffset + available.y).coerceIn(-topBarHeightPx, 0f)
+                    topBarOffsetY = newOffset
+                    return Offset(0f, newOffset - prevOffset)
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                if (!isCollapsibleTopBarActive || topBarHeightPx <= 0f) return Velocity.Zero
+
+                val velocityY = available.y
+                val targetOffset = when {
+                    // Swiping down (positive velocity) -> bring top bar back!
+                    velocityY > 150f -> 0f
+                    // Swiping up (negative velocity) -> hide top bar!
+                    velocityY < -150f -> -topBarHeightPx
+                    // Low velocity release: check user's drag direction
+                    lastScrollDelta > 0f -> 0f // User dragged down -> expand
+                    lastScrollDelta < 0f -> -topBarHeightPx // User dragged up -> collapse
+                    topBarOffsetY > -topBarHeightPx * 0.5f -> 0f
+                    else -> -topBarHeightPx
+                }
+
+                if (topBarOffsetY != targetOffset) {
+                    topBarAnimationJob?.cancel()
+                    topBarAnimationJob = coroutineScope.launch {
+                        animate(
+                            initialValue = topBarOffsetY,
+                            targetValue = targetOffset,
+                            animationSpec = MotionTokens.snappySpring()
+                        ) { value, _ ->
+                            topBarOffsetY = value
+                        }
+                    }
+                }
+                return Velocity.Zero
+            }
+        }
+    }
+
+    LaunchedEffect(isCollapsibleTopBarActive) {
+        if (!isCollapsibleTopBarActive && topBarOffsetY != 0f) {
+            topBarAnimationJob?.cancel()
+            topBarOffsetY = 0f
+        }
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.isTopBarCollapsed.collect { collapsed ->
+            if (!collapsed && topBarOffsetY != 0f) {
+                topBarAnimationJob?.cancel()
+                topBarAnimationJob = coroutineScope.launch {
+                    animate(
+                        initialValue = topBarOffsetY,
+                        targetValue = 0f,
+                        animationSpec = MotionTokens.snappySpring()
+                    ) { value, _ ->
+                        topBarOffsetY = value
+                    }
+                }
+            }
+        }
+    }
+
+    val isMainScreen = currentRoute == "photos" || currentRoute == "videos" || currentRoute == "albums" || currentRoute == "search" || currentRoute == null
+    val isAlbumScreen = currentRoute == "album/{bucketName}"
+    val isSettingsScreen = currentRoute == "settings"
+
+    Scaffold(
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        topBar = {
+            if (isMainScreen || isAlbumScreen || isSettingsScreen) {
+                val isTopBarCollapsed by viewModel.isTopBarCollapsed.collectAsState()
+                val topBarColor by animateColorAsState(
+                    targetValue = when {
+                        isSelectionMode -> MaterialTheme.colorScheme.surfaceContainerHigh
+                        isTopBarCollapsed -> MaterialTheme.colorScheme.surfaceContainer
+                        else -> MaterialTheme.colorScheme.surfaceContainerLow
+                    },
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                    label = "topBarColor"
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            translationY = if (isCollapsibleTopBarActive) topBarOffsetY else 0f
+                            alpha = if (isCollapsibleTopBarActive && topBarHeightPx > 0f) {
+                                (1f + topBarOffsetY / (topBarHeightPx * 0.7f)).coerceIn(0f, 1f)
+                            } else 1f
+                        }
+                        .background(topBarColor)
+                        .statusBarsPadding()
+                        .onGloballyPositioned { coords ->
+                            if (coords.size.height > 0) {
+                                topBarHeightPx = coords.size.height.toFloat()
+                            }
+                        }
+                ) {
+                    if (isSelectionMode) {
+                        Surface(
+                            color = topBarColor,
+                            shadowElevation = 0.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ExpressiveFilledIconButton(
+                                    onClick = { viewModel.clearSelection() },
+                                    modifier = Modifier.size(40.dp),
+                                    colors = IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Icon(ImageVector.vectorResource(R.drawable.ic_ms_close), contentDescription = "Clear selection", modifier = Modifier.size(IconSizeTokens.L))
+                                }
+                                AnimatedContent(
+                                    targetState = selectedUris.size,
+                                    transitionSpec = {
+                                        if (targetState > initialState) {
+                                            (slideInVertically { -it } + fadeIn()) togetherWith
+                                                    (slideOutVertically { it } + fadeOut())
+                                        } else {
+                                            (slideInVertically { it } + fadeIn()) togetherWith
+                                                    (slideOutVertically { -it } + fadeOut())
+                                        }
+                                    },
+                                    label = "selectionCount",
+                                    modifier = Modifier.padding(start = 16.dp).weight(1f)
+                                ) { count ->
+                                    Text(
+                                        "$count Selected",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                                ExpressiveFilledIconButton(
+                                    onClick = { viewModel.toggleSelectAll() },
+                                    modifier = Modifier.size(40.dp),
+                                    colors = IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_ms_select_all),
+                                        contentDescription = "Select or Deselect All",
+                                        modifier = Modifier.size(IconSizeTokens.L)
+                                    )
+                                }
+                            }
+                        }
+                    } else if (currentRoute == "album/{bucketName}") {
+                        Surface(
+                            color = topBarColor,
+                            shadowElevation = 0.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ExpressiveFilledIconButton(
+                                    onClick = { nestedNavController.popBackStackSafely() },
+                                    modifier = Modifier.size(40.dp),
+                                    colors = IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Icon(ImageVector.vectorResource(R.drawable.ic_ms_arrow_back), contentDescription = "Back", modifier = Modifier.size(IconSizeTokens.L))
+                                }
+                                val friendlyTitle = when {
+                                    albumNameArg == "search_text" -> "Search Results"
+                                    albumNameArg == "search_smart" -> "Semantic Matches"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_RAW -> "RAW Photos"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_PANORAMAS -> "Panoramas"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_SLOW_MO -> "Slow Motion"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_ANIMATIONS -> "GIFs & Animations"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_NIGHT -> "Night Shots"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_PHOTO_SPHERE -> "Photo Spheres"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_PORTRAIT -> "Portraits"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_MACRO -> "Macro Shots"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.MEDIA_TYPE_TIMELAPSE -> "Time-Lapses"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.DOC_BOOKS_MAGAZINES -> "Books & Magazines"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.DOC_EVENTS -> "Events"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.DOC_IDS -> "IDs"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.DOC_NOTES -> "Notes"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.DOC_PAYMENTS -> "Payments / Methods"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.DOC_RECEIPTS -> "Receipts"
+                                    albumNameArg == com.inferno.gallery.data.BucketNames.DOC_SOCIAL -> "Social"
+                                    albumNameArg?.startsWith("place:") == true -> albumNameArg.removePrefix("place:")
+                                    else -> albumNameArg ?: "Album"
+                                }
+                                Text(
+                                    friendlyTitle,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .padding(start = 16.dp)
+                                        .weight(1f)
+                                )
+                                var showAlbumOverflowMenu by remember { mutableStateOf(false) }
+                                var albumOverflowState by remember { mutableStateOf("main") }
+                                Box {
+                                    ExpressiveFilledIconButton(
+                                        onClick = {
+                                            albumOverflowState = "main"
+                                            showAlbumOverflowMenu = true
+                                        },
+                                        modifier = Modifier.size(40.dp),
+                                        colors = IconButtonDefaults.filledIconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = ImageVector.vectorResource(R.drawable.ic_ms_more_vert),
+                                            contentDescription = "More options",
+                                            modifier = Modifier.size(IconSizeTokens.L)
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = showAlbumOverflowMenu,
+                                        onDismissRequest = {
+                                            showAlbumOverflowMenu = false
+                                            albumOverflowState = "main"
+                                        },
+                                        shape = com.inferno.gallery.ui.theme.ShapeMedium,
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        tonalElevation = 6.dp,
+                                        modifier = Modifier.widthIn(min = 180.dp)
+                                    ) {
+                                        if (albumOverflowState == "main") {
+                                            DropdownMenuItem(
+                                                text = { Text("View Mode") },
+                                                leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_grid_view), contentDescription = null) },
+                                                trailingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_chevron_right), contentDescription = null) },
+                                                onClick = { albumOverflowState = "view" }
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Sort Order") },
+                                                leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_sort), contentDescription = null) },
+                                                trailingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_chevron_right), contentDescription = null) },
+                                                onClick = { albumOverflowState = "sort" }
+                                            )
+                                        } else if (albumOverflowState == "view") {
+                                            DropdownMenuItem(
+                                                text = { Text("Back") },
+                                                leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_arrow_back), contentDescription = null) },
+                                                onClick = { albumOverflowState = "main" }
+                                            )
+                                            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                            DropdownMenuItem(text = { Text("Immersive View") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = viewMode == ViewMode.Immersive, onClick = null) }, onClick = { viewModel.setViewMode(ViewMode.Immersive); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Grouped View") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = viewMode == ViewMode.Grouped, onClick = null) }, onClick = { viewModel.setViewMode(ViewMode.Grouped); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                        } else if (albumOverflowState == "sort") {
+                                            DropdownMenuItem(
+                                                text = { Text("Back") },
+                                                leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_arrow_back), contentDescription = null) },
+                                                onClick = { albumOverflowState = "main" }
+                                            )
+                                            androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                            DropdownMenuItem(text = { Text("Date Taken (Newest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.NewToOld, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.NewToOld); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Date Taken (Oldest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.OldToNew, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.OldToNew); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Date Added (Newest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.DateModifiedNewToOld, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.DateModifiedNewToOld); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Date Added (Oldest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.DateModifiedOldToNew, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.DateModifiedOldToNew); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Size (Large to Small)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.BigToSmall, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.BigToSmall); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Size (Small to Large)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.SmallToBig, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.SmallToBig); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Name (A - Z)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.NameAsc, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.NameAsc); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                            DropdownMenuItem(text = { Text("Name (Z - A)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.NameDesc, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.NameDesc); showAlbumOverflowMenu = false; albumOverflowState = "main" })
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if (currentRoute == "settings") {
+                        Surface(
+                            color = topBarColor,
+                            shadowElevation = 0.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ExpressiveFilledIconButton(
+                                    onClick = {
+                                        if (settingsActiveSection != null) {
+                                            settingsActiveSection = null
+                                        } else {
+                                            nestedNavController.popBackStackSafely()
+                                        }
+                                    },
+                                    colors = IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    ),
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(ImageVector.vectorResource(R.drawable.ic_ms_arrow_back), contentDescription = "Back", modifier = Modifier.size(IconSizeTokens.L))
+                                }
+                                Text(
+                                    settingsActiveSection ?: "Settings",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .padding(start = 12.dp)
+                                        .weight(1f)
+                                )
+                            }
+                        }
+                    } else {
+                        Surface(
+                            color = topBarColor,
+                            shadowElevation = 0.dp
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val titleText = when (currentRoute) {
+                                    "photos" -> "Photos"
+                                    "videos" -> "Videos"
+                                    "albums" -> "Albums"
+                                    "search" -> "Search"
+                                    else -> "BlackServ Gallery"
+                                }
+                                Text(
+                                    titleText,
+                                    style = mainScreenTitleStyle(),
+                                    modifier = Modifier.padding(start = 12.dp)
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.padding(end = 6.dp)
+                                ) {
+                                    if (currentRoute != "photos" && currentRoute != "videos" && currentRoute != "search") {
+                                        ExpressiveFilledIconButton(
+                                            onClick = { nestedNavController.navigate("search") },
+                                            modifier = Modifier.size(40.dp),
+                                            colors = IconButtonDefaults.filledIconButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        ) {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_search),
+                                                contentDescription = "Search",
+                                                modifier = Modifier.size(IconSizeTokens.L)
+                                            )
+                                        }
+                                    }
+                                    if (currentRoute == "albums") {
+                                        ExpressiveFilledIconButton(
+                                            onClick = { showCreateAlbumDialog = true },
+                                            modifier = Modifier.size(40.dp),
+                                            colors = IconButtonDefaults.filledIconButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        ) {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_create_new_folder),
+                                                contentDescription = "Create Album",
+                                                modifier = Modifier.size(IconSizeTokens.L)
+                                            )
+                                        }
+                                    }
+                                    
+                                    var showOverflowMenu by remember { mutableStateOf(false) }
+                                    var overflowState by remember { mutableStateOf("main") }
+                                    Box {
+                                        ExpressiveFilledIconButton(
+                                            onClick = {
+                                                overflowState = "main"
+                                                showOverflowMenu = true
+                                            },
+                                            modifier = Modifier.size(40.dp),
+                                            colors = IconButtonDefaults.filledIconButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        ) {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_more_vert),
+                                                contentDescription = "More options",
+                                                modifier = Modifier.size(IconSizeTokens.L)
+                                            )
+                                        }
+                                        DropdownMenu(
+                                            expanded = showOverflowMenu,
+                                            onDismissRequest = { 
+                                                showOverflowMenu = false
+                                                overflowState = "main"
+                                            },
+                                            shape = com.inferno.gallery.ui.theme.ShapeMedium,
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            tonalElevation = 6.dp,
+                                            modifier = Modifier.widthIn(min = 180.dp)
+                                        ) {
+                                            if (overflowState == "main") {
+                                                DropdownMenuItem(
+                                                    text = { Text("Settings") },
+                                                    leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_settings), contentDescription = null) },
+                                                    onClick = {
+                                                        showOverflowMenu = false
+                                                        overflowState = "main"
+                                                        nestedNavController.navigate("settings") {
+                                                            popUpTo("photos") { saveState = true }
+                                                            launchSingleTop = true
+                                                            restoreState = true
+                                                        }
+                                                    }
+                                                )
+                                                if (currentRoute == "photos" || currentRoute == "videos") {
+                                                    androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                                    DropdownMenuItem(
+                                                        text = { Text("View Mode") },
+                                                        leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_grid_view), contentDescription = null) },
+                                                        trailingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_chevron_right), contentDescription = null) },
+                                                        onClick = { overflowState = "view" }
+                                                    )
+                                                    DropdownMenuItem(
+                                                        text = { Text("Sort Order") },
+                                                        leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_sort), contentDescription = null) },
+                                                        trailingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_chevron_right), contentDescription = null) },
+                                                        onClick = { overflowState = "sort" }
+                                                    )
+                                                }
+                                            } else if (overflowState == "view") {
+                                                DropdownMenuItem(
+                                                    text = { Text("Back") },
+                                                    leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_arrow_back), contentDescription = null) },
+                                                    onClick = { overflowState = "main" }
+                                                )
+                                                androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                                DropdownMenuItem(text = { Text("Immersive View") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = viewMode == ViewMode.Immersive, onClick = null) }, onClick = { viewModel.setViewMode(ViewMode.Immersive); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Grouped View") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = viewMode == ViewMode.Grouped, onClick = null) }, onClick = { viewModel.setViewMode(ViewMode.Grouped); showOverflowMenu = false; overflowState = "main" })
+                                            } else if (overflowState == "sort") {
+                                                DropdownMenuItem(
+                                                    text = { Text("Back") },
+                                                    leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_arrow_back), contentDescription = null) },
+                                                    onClick = { overflowState = "main" }
+                                                )
+                                                androidx.compose.material3.HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                                DropdownMenuItem(text = { Text("Date Taken (Newest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.NewToOld, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.NewToOld); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Date Taken (Oldest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.OldToNew, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.OldToNew); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Date Added (Newest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.DateModifiedNewToOld, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.DateModifiedNewToOld); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Date Added (Oldest)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.DateModifiedOldToNew, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.DateModifiedOldToNew); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Size (Large to Small)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.BigToSmall, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.BigToSmall); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Size (Small to Large)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.SmallToBig, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.SmallToBig); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Name (A - Z)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.NameAsc, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.NameAsc); showOverflowMenu = false; overflowState = "main" })
+                                                DropdownMenuItem(text = { Text("Name (Z - A)") }, trailingIcon = { androidx.compose.material3.RadioButton(selected = sortOrder == SortOrder.NameDesc, onClick = null) }, onClick = { viewModel.setSortOrder(SortOrder.NameDesc); showOverflowMenu = false; overflowState = "main" })
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            val isDockVisible = isMainScreen && !isSelectionMode
+            AnimatedVisibility(
+                visible = isDockVisible,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
+            ) {
+                if (dockStyle == DockStyle.PILL) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(bottom = 14.dp),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        FloatingNavigationPill(
+                            currentRoute = currentRoute,
+                            showVideosTab = showVideosInDock,
+                            onNavigateToPhotos = {
+                                if (nestedNavController.currentDestination?.route == "photos") {
+                                    viewModel.triggerPhotosScrollToTop()
+                                } else {
+                                    nestedNavController.navigate("photos") {
+                                        popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            onNavigateToVideos = {
+                                if (nestedNavController.currentDestination?.route == "videos") {
+                                    viewModel.triggerVideosScrollToTop()
+                                } else {
+                                    nestedNavController.navigate("videos") {
+                                        popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            onNavigateToAlbums = {
+                                if (nestedNavController.currentDestination?.route == "albums") {
+                                    viewModel.triggerAlbumsScrollToTop()
+                                } else {
+                                    nestedNavController.navigate("albums") {
+                                        popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            onNavigateToSearch = {
+                                nestedNavController.navigate("search") {
+                                    popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
+                } else {
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pointerInput(Unit) {},
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        tonalElevation = 0.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .height(56.dp)
+                                .padding(horizontal = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceAround,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            DockItem(
+                                icon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_image), contentDescription = "Photos", modifier = Modifier.size(24.dp)) },
+                                label = "Photos",
+                                isSelected = currentRoute == "photos",
+                                onClick = { 
+                                    if (nestedNavController.currentDestination?.route == "photos") {
+                                        viewModel.triggerPhotosScrollToTop()
+                                    } else {
+                                        nestedNavController.navigate("photos") {
+                                            popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                }
+                            )
+                            if (showVideosInDock) {
+                                DockItem(
+                                    icon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_play_arrow), contentDescription = "Videos", modifier = Modifier.size(24.dp)) },
+                                    label = "Videos",
+                                    isSelected = currentRoute == "videos",
+                                    onClick = {
+                                        if (nestedNavController.currentDestination?.route == "videos") {
+                                            viewModel.triggerVideosScrollToTop()
+                                        } else {
+                                            nestedNavController.navigate("videos") {
+                                                popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                            DockItem(
+                                icon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_photo_album), contentDescription = "Albums", modifier = Modifier.size(24.dp)) },
+                                label = "Albums",
+                                isSelected = currentRoute?.startsWith("album") == true || currentRoute == "albums",
+                                onClick = { 
+                                    if (nestedNavController.currentDestination?.route == "albums") {
+                                        viewModel.triggerAlbumsScrollToTop()
+                                    } else {
+                                        nestedNavController.navigate("albums") {
+                                            popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                }
+                            )
+                            DockItem(
+                                icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_ms_search), contentDescription = "Search", modifier = Modifier.size(24.dp)) },
+                                label = "Search",
+                                isSelected = currentRoute == "search",
+                                onClick = { nestedNavController.navigate("search") {
+                                    popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                } }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        val navBarBottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val targetBottomPadding = if (isSelectionMode) {
+            76.dp + navBarBottomInset
+        } else {
+            innerPadding.calculateBottomPadding()
+        }
+        val animatedBottomPadding by animateDpAsState(
+            targetValue = targetBottomPadding.coerceAtLeast(0.dp),
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            ),
+            label = "scaffoldBottomPadding"
+        )
+        val layoutDirection = LocalLayoutDirection.current
+        val effectivePadding = PaddingValues(
+            start = innerPadding.calculateStartPadding(layoutDirection).coerceAtLeast(0.dp),
+            top = innerPadding.calculateTopPadding().coerceAtLeast(0.dp),
+            end = innerPadding.calculateEndPadding(layoutDirection).coerceAtLeast(0.dp),
+            bottom = animatedBottomPadding.coerceAtLeast(0.dp)
+        )
+        NavHost(
+            navController = nestedNavController,
+            startDestination = "photos",
+            enterTransition = { getEnterTransition(initialState.destination.route, targetState.destination.route) },
+            exitTransition = { getExitTransition(initialState.destination.route, targetState.destination.route) },
+            popEnterTransition = { getEnterTransition(initialState.destination.route, targetState.destination.route) },
+            popExitTransition = { getExitTransition(initialState.destination.route, targetState.destination.route) }
+        ) {
+            composable("photos") {
+                GalleryScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onPhotoClick = onPhotoClick,
+                    viewModel = viewModel,
+                    contentPadding = effectivePadding,
+                    isMainTab = true,
+                    topBarCollapseFractionProvider = {
+                        if (isCollapsibleTopBarActive && topBarHeightPx > 0f) {
+                            (-topBarOffsetY / topBarHeightPx).coerceIn(0f, 1f)
+                        } else 0f
+                    },
+                    onNavigateToSettings = {
+                        nestedNavController.navigate("settings") {
+                            popUpTo("photos") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+            composable("videos") {
+                GalleryScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onPhotoClick = onPhotoClick,
+                    viewModel = viewModel,
+                    contentPadding = effectivePadding,
+                    bucketName = com.inferno.gallery.data.BucketNames.VIDEOS,
+                    isMainTab = true,
+                    topBarCollapseFractionProvider = {
+                        if (isCollapsibleTopBarActive && topBarHeightPx > 0f) {
+                            (-topBarOffsetY / topBarHeightPx).coerceIn(0f, 1f)
+                        } else 0f
+                    },
+                    onNavigateToSettings = {
+                        nestedNavController.navigate("settings") {
+                            popUpTo("photos") { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+            composable(
+                route = "albums",
+                enterTransition = {
+                    if (initialState.destination.route?.startsWith("album/") == true || initialState.destination.route == "all_albums") {
+                        fadeIn(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getEnterTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                exitTransition = {
+                    if (targetState.destination.route?.startsWith("album/") == true || targetState.destination.route == "all_albums") {
+                        fadeOut(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getExitTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                popEnterTransition = {
+                    if (initialState.destination.route?.startsWith("album/") == true || initialState.destination.route == "all_albums") {
+                        fadeIn(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getEnterTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                popExitTransition = {
+                    if (targetState.destination.route?.startsWith("album/") == true || targetState.destination.route == "all_albums") {
+                        fadeOut(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getExitTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                }
+            ) {
+                var pendingCoverAlbumName by remember { mutableStateOf<String?>(null) }
+                val pickCoverLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.PickVisualMedia()
+                ) { uri ->
+                    if (uri != null) {
+                        val albumName = pendingCoverAlbumName
+                        if (albumName != null) {
+                            viewModel.setAlbumCustomCover(albumName, uri.toString())
+                        }
+                    }
+                    pendingCoverAlbumName = null
+                }
+
+                AlbumsScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = this,
+                    viewModel = viewModel,
+                    contentPadding = effectivePadding,
+                    onAlbumClick = { bucketName -> 
+                        viewModel.resetGridScrollPosition(bucketName)
+                        viewModel.setBucket(bucketName)
+                        val encoded = android.net.Uri.encode(bucketName)
+                        nestedNavController.navigate("album/$encoded")
+                    },
+                    onNavigateToVault = onNavigateToVault,
+                    onNavigateToDuplicateCleaner = { nestedNavController.navigate("duplicate_cleaner") },
+                    onNavigateToPhotoMap = { nestedNavController.navigate("photo_map") },
+                    onNavigateToPlacesList = { nestedNavController.navigate("places_list") },
+                    onNavigateToPeople = { nestedNavController.navigate("people_list") },
+                    onPersonClick = { personId -> nestedNavController.navigate("person_detail/$personId") },
+                    onNavigateToAllAlbums = { nestedNavController.navigate("all_albums") },
+                    onChangeCover = { albumName ->
+                        pendingCoverAlbumName = albumName
+                        pickCoverLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onDeleteCover = { albumName ->
+                        viewModel.removeAlbumCustomCover(albumName)
+                    }
+                )
+            }
+            
+            composable(
+                route = "places_list",
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeIn(MotionTokens.snappySpring())
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeOut(MotionTokens.snappySpring())
+                }
+            ) {
+                PlacesListScreen(
+                    viewModel = viewModel,
+                    onNavigateUp = { nestedNavController.popBackStackSafely() },
+                    onNavigateToMap = { nestedNavController.navigate("photo_map") },
+                    onPlaceClick = { placeName ->
+                        val target = if (placeName.startsWith("place:")) placeName else "place:$placeName"
+                        val encoded = android.net.Uri.encode(target)
+                        nestedNavController.navigate("album/$encoded")
+                    }
+                )
+            }
+
+            composable(
+                route = "duplicate_cleaner",
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeIn(MotionTokens.snappySpring())
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeOut(MotionTokens.snappySpring())
+                }
+            ) {
+                DuplicateCleanerScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { nestedNavController.popBackStackSafely() }
+                )
+            }
+
+            composable(
+                route = "people_list",
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeIn(MotionTokens.snappySpring())
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeOut(MotionTokens.snappySpring())
+                }
+            ) {
+                com.inferno.gallery.ui.people.PeopleScreen(
+                    onBack = { nestedNavController.popBackStackSafely() },
+                    onPersonClick = { personId -> nestedNavController.navigate("person_detail/$personId") },
+                    onStartScan = { settingsViewModel.startFaceIndexing() },
+                    onNavigateToSettings = {
+                        settingsActiveSection = "Smart Search & OCR"
+                        nestedNavController.navigate("settings")
+                    }
+                )
+            }
+
+            composable(
+                route = "people",
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeIn(MotionTokens.snappySpring())
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeOut(MotionTokens.snappySpring())
+                }
+            ) {
+                com.inferno.gallery.ui.people.PeopleScreen(
+                    onBack = { nestedNavController.popBackStackSafely() },
+                    onPersonClick = { personId -> nestedNavController.navigate("person_detail/$personId") },
+                    onStartScan = { settingsViewModel.startFaceIndexing() },
+                    onNavigateToSettings = {
+                        settingsActiveSection = "Smart Search & OCR"
+                        nestedNavController.navigate("settings")
+                    }
+                )
+            }
+
+            composable(
+                route = "person_detail/{personId}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("personId") { type = androidx.navigation.NavType.LongType }
+                ),
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeIn(MotionTokens.snappySpring())
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeOut(MotionTokens.snappySpring())
+                }
+            ) { backStackEntry ->
+                val personId = backStackEntry.arguments?.getLong("personId") ?: return@composable
+                com.inferno.gallery.ui.people.PersonDetailScreen(
+                    personId = personId,
+                    onBack = { nestedNavController.popBackStackSafely(backStackEntry) },
+                    onMediaClick = { media -> onPhotoClick(media.id.toString(), "person:$personId", null) }
+                )
+            }
+
+            composable(
+                route = "person/{personId}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("personId") { type = androidx.navigation.NavType.LongType }
+                ),
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeIn(MotionTokens.snappySpring())
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = MotionTokens.snappySpring()
+                    ) + fadeOut(MotionTokens.snappySpring())
+                }
+            ) { backStackEntry ->
+                val personId = backStackEntry.arguments?.getLong("personId") ?: return@composable
+                com.inferno.gallery.ui.people.PersonDetailScreen(
+                    personId = personId,
+                    onBack = { nestedNavController.popBackStackSafely(backStackEntry) },
+                    onMediaClick = { media -> onPhotoClick(media.id.toString(), "person:$personId", null) }
+                )
+            }
+
+            composable(
+                route = "album/{bucketName}",
+                enterTransition = {
+                    if (initialState.destination.route == "albums" || initialState.destination.route == "all_albums" || initialState.destination.route == "search") {
+                        fadeIn(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getEnterTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                exitTransition = {
+                    if (targetState.destination.route == "albums" || targetState.destination.route == "all_albums" || targetState.destination.route == "search") {
+                        fadeOut(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getExitTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                popEnterTransition = {
+                    if (initialState.destination.route == "albums" || initialState.destination.route == "all_albums" || initialState.destination.route == "search") {
+                        fadeIn(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getEnterTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                popExitTransition = {
+                    if (targetState.destination.route == "albums" || targetState.destination.route == "all_albums" || targetState.destination.route == "search") {
+                        fadeOut(MotionTokens.fastEffectsSpec())
+                    } else {
+                        getExitTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                }
+            ) { backStackEntry ->
+                val rawBucketName = backStackEntry.arguments?.getString("bucketName") ?: ""
+                val bucketName = try { android.net.Uri.decode(rawBucketName) } catch (e: Exception) { rawBucketName }
+                androidx.compose.runtime.key(bucketName) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        GalleryScreen(
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            onPhotoClick = onPhotoClick,
+                            viewModel = viewModel,
+                            contentPadding = effectivePadding,
+                            bucketName = bucketName,
+                            topBarCollapseFractionProvider = {
+                                if (isCollapsibleTopBarActive && topBarHeightPx > 0f) {
+                                    (-topBarOffsetY / topBarHeightPx).coerceIn(0f, 1f)
+                                } else 0f
+                            }
+                        )
+                    }
+                }
+            }
+            composable("search") {
+                SearchScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onPhotoClick = onPhotoClick,
+                    viewModel = viewModel,
+                    contentPadding = effectivePadding,
+                    onAlbumClick = { bucketName ->
+                        viewModel.resetGridScrollPosition(bucketName)
+                        viewModel.setBucket(bucketName)
+                        val encoded = android.net.Uri.encode(bucketName)
+                        nestedNavController.navigate("album/$encoded")
+                    },
+                    onPersonClick = { personId ->
+                        nestedNavController.navigate("person/$personId")
+                    }
+                )
+            }
+            composable("settings") {
+                SettingsScreen(
+                    contentPadding = effectivePadding,
+                    galleryViewModel = viewModel,
+                    onBackClick = { nestedNavController.popBackStackSafely() },
+                    onNavigateToVault = onNavigateToVault,
+                    activeSection = settingsActiveSection,
+                    onActiveSectionChange = { settingsActiveSection = it }
+                )
+            }
+
+
+            composable("photo_map") {
+                PhotoMapScreen(
+                    galleryViewModel = viewModel,
+                    onPhotoClick = onPhotoClick,
+                    onBackClick = { nestedNavController.popBackStackSafely() }
+                )
+            }
+            composable(
+                route = "all_albums",
+                enterTransition = {
+                    if (initialState.destination.route?.startsWith("album/") == true || initialState.destination.route == "albums") {
+                        fadeIn(MotionTokens.snappySpring())
+                    } else {
+                        getEnterTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                exitTransition = {
+                    if (targetState.destination.route?.startsWith("album/") == true || targetState.destination.route == "albums") {
+                        fadeOut(MotionTokens.snappySpring())
+                    } else {
+                        getExitTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                popEnterTransition = {
+                    if (initialState.destination.route?.startsWith("album/") == true || initialState.destination.route == "albums") {
+                        fadeIn(MotionTokens.snappySpring())
+                    } else {
+                        getEnterTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                },
+                popExitTransition = {
+                    if (targetState.destination.route?.startsWith("album/") == true || targetState.destination.route == "albums") {
+                        fadeOut(MotionTokens.snappySpring())
+                    } else {
+                        getExitTransition(initialState.destination.route, targetState.destination.route)
+                    }
+                }
+            ) {
+                var pendingCoverAlbumName by remember { mutableStateOf<String?>(null) }
+                val pickCoverLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.PickVisualMedia()
+                ) { uri ->
+                    if (uri != null) {
+                        val albumName = pendingCoverAlbumName
+                        if (albumName != null) {
+                            viewModel.setAlbumCustomCover(albumName, uri.toString())
+                        }
+                    }
+                    pendingCoverAlbumName = null
+                }
+                AllAlbumsScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = this,
+                    galleryViewModel = viewModel,
+                    onBackClick = { nestedNavController.popBackStackSafely() },
+                    onAlbumClick = { bucketName -> 
+                        viewModel.resetGridScrollPosition(bucketName)
+                        viewModel.setBucket(bucketName)
+                        val encoded = android.net.Uri.encode(bucketName)
+                        nestedNavController.navigate("album/$encoded")
+                    },
+                    onChangeCover = { bucketName -> 
+                        pendingCoverAlbumName = bucketName
+                        pickCoverLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onDeleteCover = { bucketName ->
+                        viewModel.removeAlbumCustomCover(bucketName)
+                    }
+                )
+            }
+        }
+
+        // Selection Mode SplitButton Overlay
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            AnimatedVisibility(
+                visible = isSelectionMode,
+                enter = slideInVertically(MotionTokens.gentleSpring()) { it } + fadeIn(MotionTokens.gentleSpring()),
+                exit = slideOutVertically(MotionTokens.gentleSpring()) { it } + fadeOut(MotionTokens.gentleSpring()),
+                modifier = Modifier
+                    .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp)
+            ) {
+            var expanded by remember { mutableStateOf(false) }
+            var showMoveSheet by remember { mutableStateOf(false) }
+            var showCopySheet by remember { mutableStateOf(false) }
+
+            var showMultiDeleteConfirmDialog by remember { mutableStateOf(false) }
+            val confirmDeleteEnabled by viewModel.settingsRepository.confirmDeleteEnabledFlow.collectAsState(initial = true)
+            
+            if (showMoveSheet) {
+                androidx.compose.material3.ModalBottomSheet(
+                    onDismissRequest = { showMoveSheet = false },
+                    shape = ShapeEdgeTop,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    var isBrowsingStorage by remember { mutableStateOf(false) }
+                    val albums by viewModel.allAlbums.collectAsState()
+
+                    if (!isBrowsingStorage) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .padding(bottom = 24.dp)
+                        ) {
+                            Text(
+                                "Move to Album",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            Text(
+                                "${selectedUris.size} items · ${albums.size} albums",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            // Tonal button at the top to browse system storage tree
+                            ExpressiveButton(
+                                onClick = { isBrowsingStorage = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                ),
+                                shape = ShapeMedium
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_ms_folder),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "Browse Other Folders",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+
+                            androidx.compose.foundation.lazy.LazyColumn(
+                                modifier = Modifier.heightIn(max = 400.dp)
+                            ) {
+                                // Private Space as first item
+                                item {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showMoveSheet = false
+                                                val activity = context as? androidx.fragment.app.FragmentActivity
+                                                if (activity != null) {
+                                                    viewModel.vaultAuthManager.authenticate(
+                                                        activity = activity,
+                                                        onSuccess = {
+                                                            val uris = selectedUris.mapNotNull { android.net.Uri.parse(it) }
+                                                            viewModel.hideMedia(uris)
+                                                            viewModel.clearSelection()
+                                                        },
+                                                        onFailure = {}
+                                                    )
+                                                }
+                                            }
+                                            .padding(vertical = 14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                                    shape = ShapeMedium
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                ImageVector.vectorResource(R.drawable.ic_ms_shield),
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                "Private Space",
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
+                                            )
+                                            Text(
+                                                "Hidden \u00b7 Biometric protected",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Icon(
+                                            ImageVector.vectorResource(R.drawable.ic_ms_visibility_off),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                    )
+                                }
+                                items(albums.size) { index ->
+                                    val album = albums[index]
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showMoveSheet = false
+                                                viewModel.moveSelectedMedia(album.bucketName)
+                                            }
+                                            .padding(vertical = 14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        coil3.compose.AsyncImage(
+                                            model = album.coverUri,
+                                            contentDescription = album.bucketName,
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(ShapeMedium)
+                                        )
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                album.bucketName,
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
+                                            )
+                                            Text(
+                                                "${album.itemCount} items",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    if (index < albums.size - 1) {
+                                        HorizontalDivider(
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                            modifier = Modifier.padding(start = 56.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Directory Tree Selector UI
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .padding(bottom = 24.dp)
+                        ) {
+                            val storageRoot = remember { android.os.Environment.getExternalStorageDirectory() }
+                            var currentBrowsingDirectory by remember { mutableStateOf(storageRoot) }
+                            var subdirectories by remember { mutableStateOf<List<java.io.File>>(emptyList()) }
+                            var showCreateFolderDialog by remember { mutableStateOf(false) }
+                            var newFolderName by remember { mutableStateOf("") }
+                            var refreshTrigger by remember { mutableStateOf(0) }
+
+                            LaunchedEffect(currentBrowsingDirectory, refreshTrigger) {
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    subdirectories = currentBrowsingDirectory.listFiles()
+                                        ?.filter { it.isDirectory && !it.name.startsWith(".") }
+                                        ?.sortedBy { it.name.lowercase() }
+                                        ?: emptyList()
+                                }
+                            }
+
+                            if (showCreateFolderDialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showCreateFolderDialog = false },
+                                    title = { Text("Create New Folder") },
+                                    text = {
+                                        androidx.compose.material3.OutlinedTextField(
+                                            value = newFolderName,
+                                            onValueChange = { newFolderName = it },
+                                            label = { Text("Folder Name") },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    },
+                                    confirmButton = {
+                                        androidx.compose.material3.TextButton(
+                                            onClick = {
+                                                if (newFolderName.isNotBlank()) {
+                                                    val newDir = java.io.File(currentBrowsingDirectory, newFolderName.trim())
+                                                    if (!newDir.exists()) {
+                                                        newDir.mkdirs()
+                                                        refreshTrigger++
+                                                    }
+                                                    showCreateFolderDialog = false
+                                                    newFolderName = ""
+                                                }
+                                            }
+                                        ) {
+                                            Text("Create")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        androidx.compose.material3.TextButton(
+                                            onClick = {
+                                                showCreateFolderDialog = false
+                                                newFolderName = ""
+                                            }
+                                        ) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                androidx.compose.material3.FilledTonalIconButton(
+                                    onClick = {
+                                        val parent = currentBrowsingDirectory.parentFile
+                                        if (parent != null && parent.absolutePath.startsWith(storageRoot.absolutePath)) {
+                                            currentBrowsingDirectory = parent
+                                        } else {
+                                            isBrowsingStorage = false
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_ms_arrow_back),
+                                        contentDescription = "Back"
+                                    )
+                                }
+                                Text(
+                                    text = "Browse Storage",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                androidx.compose.material3.FilledTonalIconButton(
+                                    onClick = { showCreateFolderDialog = true }
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_ms_create_new_folder),
+                                        contentDescription = "Create Folder"
+                                    )
+                                }
+                            }
+
+                            val displayPath = remember(currentBrowsingDirectory) {
+                                val relative = currentBrowsingDirectory.absolutePath
+                                    .removePrefix(storageRoot.absolutePath)
+                                    .removePrefix("/")
+                                if (relative.isEmpty()) "Internal Storage" else "Internal Storage > " + relative.replace("/", " > ")
+                            }
+                            Text(
+                                text = displayPath,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            androidx.compose.foundation.lazy.LazyColumn(
+                                modifier = Modifier.heightIn(max = 300.dp).fillMaxWidth()
+                            ) {
+                                if (subdirectories.isEmpty()) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 32.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "No subfolders found",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    items(subdirectories.size) { index ->
+                                        val folder = subdirectories[index]
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    currentBrowsingDirectory = folder
+                                                }
+                                                .padding(vertical = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_folder),
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Text(
+                                                text = folder.name,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        if (index < subdirectories.size - 1) {
+                                            HorizontalDivider(
+                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                                                modifier = Modifier.padding(start = 40.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                androidx.compose.material3.OutlinedButton(
+                                    onClick = { isBrowsingStorage = false },
+                                    modifier = Modifier.weight(1f),
+                                    shape = ShapeMedium
+                                ) {
+                                    Text("Cancel")
+                                }
+                                ExpressiveButton(
+                                    onClick = {
+                                        showMoveSheet = false
+                                        viewModel.moveSelectedMediaToPath(currentBrowsingDirectory.absolutePath)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = ShapeMedium
+                                ) {
+                                    Text("Move Here")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (showCopySheet) {
+                androidx.compose.material3.ModalBottomSheet(
+                    onDismissRequest = { showCopySheet = false },
+                    shape = ShapeEdgeTop,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    var isBrowsingStorage by remember { mutableStateOf(false) }
+                    val albums by viewModel.allAlbums.collectAsState()
+
+                    if (!isBrowsingStorage) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .padding(bottom = 24.dp)
+                        ) {
+                            Text(
+                                "Copy to Album",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            Text(
+                                "${selectedUris.size} items · ${albums.size} albums",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            // Tonal button at the top to browse system storage tree
+                            ExpressiveButton(
+                                onClick = { isBrowsingStorage = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                ),
+                                shape = ShapeMedium
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_ms_folder),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "Browse Other Folders",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+
+                            androidx.compose.foundation.lazy.LazyColumn(
+                                modifier = Modifier.heightIn(max = 400.dp)
+                            ) {
+                                items(albums.size) { index ->
+                                    val album = albums[index]
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showCopySheet = false
+                                                viewModel.copySelectedMedia(album.bucketName)
+                                            }
+                                            .padding(vertical = 14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        coil3.compose.AsyncImage(
+                                            model = album.coverUri,
+                                            contentDescription = album.bucketName,
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(ShapeMedium)
+                                        )
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                album.bucketName,
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
+                                            )
+                                            Text(
+                                                "${album.itemCount} items",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    if (index < albums.size - 1) {
+                                        HorizontalDivider(
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                            modifier = Modifier.padding(start = 56.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Directory Tree Selector UI (Copy)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .padding(bottom = 24.dp)
+                        ) {
+                            val storageRoot = remember { android.os.Environment.getExternalStorageDirectory() }
+                            var currentBrowsingDirectory by remember { mutableStateOf(storageRoot) }
+                            var subdirectories by remember { mutableStateOf<List<java.io.File>>(emptyList()) }
+                            var showCreateFolderDialog by remember { mutableStateOf(false) }
+                            var newFolderName by remember { mutableStateOf("") }
+                            var refreshTrigger by remember { mutableStateOf(0) }
+
+                            LaunchedEffect(currentBrowsingDirectory, refreshTrigger) {
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    subdirectories = currentBrowsingDirectory.listFiles()
+                                        ?.filter { it.isDirectory && !it.name.startsWith(".") }
+                                        ?.sortedBy { it.name.lowercase() }
+                                        ?: emptyList()
+                                }
+                            }
+
+                            if (showCreateFolderDialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showCreateFolderDialog = false },
+                                    title = { Text("Create New Folder") },
+                                    text = {
+                                        androidx.compose.material3.OutlinedTextField(
+                                            value = newFolderName,
+                                            onValueChange = { newFolderName = it },
+                                            label = { Text("Folder Name") },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    },
+                                    confirmButton = {
+                                        androidx.compose.material3.TextButton(
+                                            onClick = {
+                                                if (newFolderName.isNotBlank()) {
+                                                    val newDir = java.io.File(currentBrowsingDirectory, newFolderName.trim())
+                                                    if (!newDir.exists()) {
+                                                        newDir.mkdirs()
+                                                        refreshTrigger++
+                                                    }
+                                                    showCreateFolderDialog = false
+                                                    newFolderName = ""
+                                                }
+                                            }
+                                        ) {
+                                            Text("Create")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        androidx.compose.material3.TextButton(
+                                            onClick = {
+                                                showCreateFolderDialog = false
+                                                newFolderName = ""
+                                            }
+                                        ) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                androidx.compose.material3.FilledTonalIconButton(
+                                    onClick = {
+                                        val parent = currentBrowsingDirectory.parentFile
+                                        if (parent != null && parent.absolutePath.startsWith(storageRoot.absolutePath)) {
+                                            currentBrowsingDirectory = parent
+                                        } else {
+                                            isBrowsingStorage = false
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_ms_arrow_back),
+                                        contentDescription = "Back"
+                                    )
+                                }
+                                Text(
+                                    text = "Browse Storage",
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                androidx.compose.material3.FilledTonalIconButton(
+                                    onClick = { showCreateFolderDialog = true }
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_ms_create_new_folder),
+                                        contentDescription = "Create Folder"
+                                    )
+                                }
+                            }
+
+                            val displayPath = remember(currentBrowsingDirectory) {
+                                val relative = currentBrowsingDirectory.absolutePath
+                                    .removePrefix(storageRoot.absolutePath)
+                                    .removePrefix("/")
+                                if (relative.isEmpty()) "Internal Storage" else "Internal Storage > " + relative.replace("/", " > ")
+                            }
+                            Text(
+                                text = displayPath,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            androidx.compose.foundation.lazy.LazyColumn(
+                                modifier = Modifier.heightIn(max = 300.dp).fillMaxWidth()
+                            ) {
+                                if (subdirectories.isEmpty()) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 32.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "No subfolders found",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    items(subdirectories.size) { index ->
+                                        val folder = subdirectories[index]
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    currentBrowsingDirectory = folder
+                                                }
+                                                .padding(vertical = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_folder),
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Text(
+                                                text = folder.name,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                        if (index < subdirectories.size - 1) {
+                                            HorizontalDivider(
+                                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                                                modifier = Modifier.padding(start = 40.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                androidx.compose.material3.OutlinedButton(
+                                    onClick = { isBrowsingStorage = false },
+                                    modifier = Modifier.weight(1f),
+                                    shape = ShapeMedium
+                                ) {
+                                    Text("Cancel")
+                                }
+                                ExpressiveButton(
+                                    onClick = {
+                                        showCopySheet = false
+                                        viewModel.copySelectedMediaToPath(currentBrowsingDirectory.absolutePath)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = ShapeMedium
+                                ) {
+                                    Text("Copy Here")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (showMultiDeleteConfirmDialog) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showMultiDeleteConfirmDialog = false },
+                    title = { Text("Move to Recycle Bin") },
+                    text = { Text("Move ${selectedUris.size} items to the Recycle Bin?") },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                showMultiDeleteConfirmDialog = false
+                                if (trashProgress == null && selectedUris.isNotEmpty()) {
+                                    trashProgress = TrashBatchProgress.start(selectedUris)
+                                }
+                            }
+                        ) {
+                            Text("Move to Bin", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = { showMultiDeleteConfirmDialog = false }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+            
+            val isTrashPage = currentRoute == "album/{bucketName}" && albumNameArg == "Trash"
+            if (isTrashPage) {
+                if (showTrashRestoreConfirmDialog) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { showTrashRestoreConfirmDialog = false },
+                        title = { Text("Restore Items") },
+                        text = { Text("Restore ${selectedUris.size} items from the Recycle Bin?") },
+                        confirmButton = {
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    showTrashRestoreConfirmDialog = false
+                                    val rawSelected = selectedUris.toList()
+                                    pendingTrashUris = rawSelected
+                                    val uris = rawSelected.map { Uri.parse(it) }
+                                    if (uris.isNotEmpty()) {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            try {
+                                                val restoreIntent = android.provider.MediaStore.createTrashRequest(
+                                                    context.contentResolver,
+                                                    uris,
+                                                    false
+                                                )
+                                                val request = androidx.activity.result.IntentSenderRequest.Builder(restoreIntent.intentSender).build()
+                                                withContext(Dispatchers.Main) {
+                                                    restoreLauncher.launch(request)
+                                                }
+                                            } catch (e: Exception) {
+                                                withContext(Dispatchers.Main) {
+                                                    android.widget.Toast.makeText(context, "Error restoring: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ) {
+                                Text("Restore")
+                            }
+                        },
+                        dismissButton = {
+                            androidx.compose.material3.TextButton(
+                                onClick = { showTrashRestoreConfirmDialog = false }
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                if (showTrashDeleteConfirmDialog) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { showTrashDeleteConfirmDialog = false },
+                        title = { Text("Delete Permanently") },
+                        text = { Text("Permanently delete ${selectedUris.size} items? This action cannot be undone.") },
+                        confirmButton = {
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    showTrashDeleteConfirmDialog = false
+                                    val rawSelected = selectedUris.toList()
+                                    pendingTrashUris = rawSelected
+                                    val uris = rawSelected.map { Uri.parse(it) }
+                                    if (uris.isNotEmpty()) {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            try {
+                                                val deleteIntent = android.provider.MediaStore.createDeleteRequest(
+                                                    context.contentResolver,
+                                                    uris
+                                                )
+                                                val request = androidx.activity.result.IntentSenderRequest.Builder(deleteIntent.intentSender).build()
+                                                withContext(Dispatchers.Main) {
+                                                    permanentDeleteLauncher.launch(request)
+                                                }
+                                            } catch (e: Exception) {
+                                                withContext(Dispatchers.Main) {
+                                                    android.widget.Toast.makeText(context, "Error deleting: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ) {
+                                Text("Delete", color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        dismissButton = {
+                            androidx.compose.material3.TextButton(
+                                onClick = { showTrashDeleteConfirmDialog = false }
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ExpressiveButton(
+                        onClick = { showTrashRestoreConfirmDialog = true },
+                        shape = ShapeFull,
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        modifier = Modifier.height(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_ms_refresh),
+                            contentDescription = "Restore",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Restore")
+                    }
+
+                    ExpressiveButton(
+                        onClick = { showTrashDeleteConfirmDialog = true },
+                        shape = ShapeFull,
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        modifier = Modifier.height(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_ms_delete),
+                            contentDescription = "Delete Permanently",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("Delete")
+                    }
+                }
+            } else {
+                val isCreateEnabled = selectedUris.size in 1..8
+                val isStitchEnabled = selectedUris.size in 2..10
+                var createMenuExpanded by remember { mutableStateOf(false) }
+                var moreMenuExpanded by remember { mutableStateOf(false) }
+
+                Surface(
+                    shape = ShapeExtraLarge,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Share
+                        IconButton(onClick = {
+                            if (selectedUris.isNotEmpty()) {
+                                coroutineScope.launch {
+                                    val strip = viewModel.settingsRepository.stripMetadataOnShareFlow.first()
+                                    com.inferno.gallery.ui.utils.ShareUtils.shareMedia(context, selectedUris.map { android.net.Uri.parse(it) }, strip)
+                                }
+                            }
+                        }) {
+                            Icon(ImageVector.vectorResource(R.drawable.ic_ms_share), contentDescription = "Share", tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(IconSizeTokens.L))
+                        }
+
+                        // Copy
+                        IconButton(onClick = { showCopySheet = true }) {
+                            Icon(ImageVector.vectorResource(R.drawable.ic_ms_content_copy), contentDescription = "Copy", tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(IconSizeTokens.L))
+                        }
+
+                        // Move
+                        IconButton(onClick = { showMoveSheet = true }) {
+                            Icon(ImageVector.vectorResource(R.drawable.ic_ms_drive_file_move), contentDescription = "Move", tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(IconSizeTokens.L))
+                        }
+
+                        // Create (Collage/Stitch)
+                        Box {
+                            IconButton(onClick = { createMenuExpanded = true }) {
+                                Icon(ImageVector.vectorResource(R.drawable.ic_ms_add), contentDescription = "Create", tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(IconSizeTokens.L))
+                            }
+                            DropdownMenu(
+                                expanded = createMenuExpanded,
+                                onDismissRequest = { createMenuExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Collage") },
+                                    leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_grid_view), contentDescription = null) },
+                                    onClick = {
+                                        createMenuExpanded = false
+                                        if (isCreateEnabled) {
+                                            onCreateCollage(selectedUris.toList())
+                                        } else {
+                                            android.widget.Toast.makeText(context, "Collage supports up to 8 images", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Stitch") },
+                                    leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_sort), contentDescription = null) },
+                                    onClick = {
+                                        createMenuExpanded = false
+                                        if (isStitchEnabled) {
+                                            onCreateStitch(selectedUris.toList())
+                                        } else {
+                                            android.widget.Toast.makeText(context, "Select between 2 and 10 images to stitch", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+                        // Delete
+                        IconButton(onClick = {
+                            if (confirmDeleteEnabled) {
+                                showMultiDeleteConfirmDialog = true
+                            } else {
+                                if (trashProgress == null && selectedUris.isNotEmpty()) {
+                                    trashProgress = TrashBatchProgress.start(selectedUris)
+                                }
+                            }
+                        }) {
+                            Icon(ImageVector.vectorResource(R.drawable.ic_ms_delete), contentDescription = "Delete", tint = com.inferno.gallery.ui.theme.LocalHarmonizedColors.current.error, modifier = Modifier.size(IconSizeTokens.L))
+                        }
+
+                        // More options
+                        Box {
+                            IconButton(onClick = { moreMenuExpanded = true }) {
+                                Icon(ImageVector.vectorResource(R.drawable.ic_ms_more_vert), contentDescription = "More", tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(IconSizeTokens.L))
+                            }
+                            DropdownMenu(
+                                expanded = moreMenuExpanded,
+                                onDismissRequest = { moreMenuExpanded = false }
+                            ) {
+                                // Hide (Private Space)
+                                DropdownMenuItem(
+                                    text = { Text("Hide") },
+                                    leadingIcon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_visibility_off), contentDescription = null) },
+                                    onClick = {
+                                        moreMenuExpanded = false
+                                        val activity = context as? androidx.fragment.app.FragmentActivity
+                                        if (activity != null) {
+                                            viewModel.vaultAuthManager.authenticate(
+                                                activity = activity,
+                                                onSuccess = {
+                                                    val uris = selectedUris.mapNotNull { android.net.Uri.parse(it) }
+                                                    viewModel.hideMedia(uris)
+                                                    viewModel.clearSelection()
+                                                },
+                                                onFailure = {}
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showCreateAlbumDialog) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = {
+                showCreateAlbumDialog = false
+                newAlbumName = ""
+            }
+        ) {
+            Surface(
+                shape = ShapeExtraLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Create new album",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    )
+                    
+                    androidx.compose.material3.OutlinedTextField(
+                        value = newAlbumName,
+                        onValueChange = { newAlbumName = it },
+                        label = { Text("Album name") },
+                        placeholder = { Text("Enter album name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
+                    )
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {
+                                showCreateAlbumDialog = false
+                                newAlbumName = ""
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        ExpressiveButton(
+                            onClick = {
+                                if (newAlbumName.isNotBlank()) {
+                                    val albumToCreate = newAlbumName.trim()
+                                    viewModel.createAlbum(
+                                        albumName = albumToCreate,
+                                        onSuccess = {
+                                            showCreateAlbumDialog = false
+                                            newAlbumName = ""
+                                            android.widget.Toast.makeText(context, "Album '$albumToCreate' created successfully", android.widget.Toast.LENGTH_SHORT).show()
+                                            triggerSync()
+                                        },
+                                        onError = { errorMsg ->
+                                            android.widget.Toast.makeText(context, "Error: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
+                                        }
+                                    )
+                                }
+                            },
+                            enabled = newAlbumName.isNotBlank()
+                        ) {
+                            Text("Save")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
+}
