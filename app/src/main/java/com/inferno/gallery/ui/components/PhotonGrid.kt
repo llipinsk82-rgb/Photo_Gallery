@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -55,7 +56,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -91,6 +91,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Spacer
@@ -615,6 +617,18 @@ fun TimelineSectionHeader(
                 end = 16.dp,
                 top = 16.dp,
                 bottom = 8.dp
+            )
+            .heightIn(min = 56.dp)
+            .then(
+                if (onSelectDay != null) {
+                    Modifier
+                        .testTag("day_selection_header")
+                        .clickable(
+                            onClickLabel = "Select or deselect all photos from $title",
+                            role = Role.Button,
+                            onClick = onSelectDay
+                        )
+                } else Modifier
             ),
         contentAlignment = if (isCenter) Alignment.Center else Alignment.CenterStart
     ) {
@@ -622,20 +636,19 @@ fun TimelineSectionHeader(
             text = title,
             style = TimelineDateHeaderStyle,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = if (onSelectDay != null) Modifier.padding(end = 56.dp) else Modifier,
+            modifier = if (onSelectDay != null) Modifier.padding(start = 52.dp) else Modifier,
             textAlign = if (isCenter) androidx.compose.ui.text.style.TextAlign.Center else androidx.compose.ui.text.style.TextAlign.Start
         )
         if (onSelectDay != null) {
-            IconButton(
-                onClick = onSelectDay,
-                modifier = Modifier.align(Alignment.CenterEnd)
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_ms_select_all),
-                    contentDescription = "Select or deselect all photos from $title",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_select_all),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(32.dp)
+                    .testTag("day_select_icon"),
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
