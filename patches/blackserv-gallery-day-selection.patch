@@ -1,0 +1,1046 @@
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 5a788a6..30360ce 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -13,11 +13,11 @@ android {
+     compileSdk = 37
+ 
+     defaultConfig {
+-        applicationId = "com.inferno.gallery"
++        applicationId = "eu.blackserv.gallery"
+         minSdk = 31
+         targetSdk = 37
+-        versionCode = 11
+-        versionName = "3.0.0"
++        versionCode = 12
++        versionName = "3.0.0-blackserv.1"
+ 
+         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+         
+@@ -99,7 +99,7 @@ androidComponents {
+     onVariants { variant ->
+         variant.outputs.forEach { output ->
+             val abi = output.filters.find { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }?.identifier ?: "universal"
+-            output.outputFileName.set("PhotonGallery-$abi.apk")
++            output.outputFileName.set("BlackServGallery-$abi.apk")
+         }
+     }
+ }
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 7f67476..ecfb88d 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -38,9 +38,9 @@
+         android:largeHeap="true"
+         android:dataExtractionRules="@xml/data_extraction_rules"
+         android:fullBackupContent="@xml/backup_rules"
+-        android:icon="@mipmap/ic_launcher"
++        android:icon="@mipmap/blackserv_launcher"
+         android:label="@string/app_name"
+-        android:roundIcon="@mipmap/ic_launcher_round"
++        android:roundIcon="@mipmap/blackserv_launcher_round"
+         android:supportsRtl="true"
+         android:theme="@style/Theme.PhotonGallery"
+         android:enableOnBackInvokedCallback="false">
+diff --git a/app/src/main/java/com/inferno/gallery/MainActivity.kt b/app/src/main/java/com/inferno/gallery/MainActivity.kt
+index cf3cca0..416bdb1 100644
+--- a/app/src/main/java/com/inferno/gallery/MainActivity.kt
++++ b/app/src/main/java/com/inferno/gallery/MainActivity.kt
+@@ -237,7 +237,7 @@ class MainActivity : FragmentActivity() {
+             val downloadUrl = intent.getStringExtra("update_download_url")
+             val apkFileName = intent.getStringExtra("update_apk_name")
+             val apkSizeBytes = intent.getLongExtra("update_apk_size", 0L)
+-            val releasePageUrl = intent.getStringExtra("update_release_url") ?: "https://github.com/Bn5prS/Photon_Gallery/releases/latest"
++            val releasePageUrl = intent.getStringExtra("update_release_url") ?: "https://github.com/llipinsk82-rgb/Photo_Gallery/releases/latest"
+ 
+             val info = UpdateInfo(
+                 currentVersion = BuildConfig.VERSION_NAME,
+diff --git a/app/src/main/java/com/inferno/gallery/crash/CrashActivity.kt b/app/src/main/java/com/inferno/gallery/crash/CrashActivity.kt
+index 235e337..c8a7fda 100644
+--- a/app/src/main/java/com/inferno/gallery/crash/CrashActivity.kt
++++ b/app/src/main/java/com/inferno/gallery/crash/CrashActivity.kt
+@@ -29,7 +29,7 @@ class CrashActivity : FragmentActivity() {
+     companion object {
+         const val EXTRA_CRASH_REPORT = "crash_report"
+         const val EXTRA_CRASH_LOG_PATH = "crash_log_path"
+-        private const val GITHUB_ISSUES_URL = "https://github.com/Bn5prS/Photon_Gallery/issues/new"
++        private const val GITHUB_ISSUES_URL = "https://github.com/llipinsk82-rgb/Photo_Gallery/issues/new"
+     }
+ 
+     override fun onCreate(savedInstanceState: Bundle?) {
+@@ -65,7 +65,7 @@ class CrashActivity : FragmentActivity() {
+                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                     type = "text/plain"
+                     putExtra(Intent.EXTRA_STREAM, uri)
+-                    putExtra(Intent.EXTRA_SUBJECT, "Photon Gallery Crash Report")
++                    putExtra(Intent.EXTRA_SUBJECT, "BlackServ Gallery Crash Report")
+                     putExtra(Intent.EXTRA_TEXT, "Crash report attached.\n\nPlease include steps to reproduce if possible.")
+                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                 }
+@@ -74,7 +74,7 @@ class CrashActivity : FragmentActivity() {
+                 // Fallback: share as text
+                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                     type = "text/plain"
+-                    putExtra(Intent.EXTRA_SUBJECT, "Photon Gallery Crash Report")
++                    putExtra(Intent.EXTRA_SUBJECT, "BlackServ Gallery Crash Report")
+                     putExtra(Intent.EXTRA_TEXT, report)
+                 }
+                 startActivity(Intent.createChooser(shareIntent, "Share Crash Log"))
+@@ -133,7 +133,7 @@ class CrashActivity : FragmentActivity() {
+ 
+     private fun copyCrashLog(report: String) {
+         val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+-        val clip = android.content.ClipData.newPlainText("Photon Gallery Crash Log", report)
++        val clip = android.content.ClipData.newPlainText("BlackServ Gallery Crash Log", report)
+         clipboard.setPrimaryClip(clip)
+     }
+ 
+diff --git a/app/src/main/java/com/inferno/gallery/data/network/UpdateChecker.kt b/app/src/main/java/com/inferno/gallery/data/network/UpdateChecker.kt
+index 717d491..0b90fd6 100644
+--- a/app/src/main/java/com/inferno/gallery/data/network/UpdateChecker.kt
++++ b/app/src/main/java/com/inferno/gallery/data/network/UpdateChecker.kt
+@@ -23,7 +23,8 @@ data class UpdateInfo(
+ )
+ 
+ object UpdateChecker {
+-    private const val GITHUB_RELEASES_URL = "https://api.github.com/repos/Bn5prS/Photon_Gallery/releases?per_page=5"
++    // Fork-specific updates only. Never offer a differently signed upstream APK.
++    private const val GITHUB_RELEASES_URL = "https://api.github.com/repos/llipinsk82-rgb/Photo_Gallery/releases?per_page=5"
+     private const val TAG = "UpdateChecker"
+ 
+     private val client = OkHttpClient.Builder()
+@@ -36,7 +37,7 @@ object UpdateChecker {
+             val request = Request.Builder()
+                 .url(GITHUB_RELEASES_URL)
+                 .header("Accept", "application/vnd.github.v3+json")
+-                .header("User-Agent", "PhotonGallery-App")
++                .header("User-Agent", "BlackServGallery-App")
+                 .build()
+ 
+             client.newCall(request).execute().use { response ->
+@@ -53,7 +54,7 @@ object UpdateChecker {
+                             downloadUrl = null,
+                             apkFileName = null,
+                             apkSizeBytes = 0L,
+-                            releasePageUrl = "https://github.com/Bn5prS/Photon_Gallery/releases"
++                            releasePageUrl = "https://github.com/llipinsk82-rgb/Photo_Gallery/releases"
+                         )
+                     }
+                     return@withContext null
+@@ -95,14 +96,14 @@ object UpdateChecker {
+                         downloadUrl = null,
+                         apkFileName = null,
+                         apkSizeBytes = 0L,
+-                        releasePageUrl = "https://github.com/Bn5prS/Photon_Gallery/releases"
++                        releasePageUrl = "https://github.com/llipinsk82-rgb/Photo_Gallery/releases"
+                     )
+                 }
+ 
+                 val tagName = releaseJson.optString("tag_name", "").trim()
+                 val releaseTitle = releaseJson.optString("name", tagName).ifBlank { tagName }
+                 val changelog = releaseJson.optString("body", "").trim()
+-                val htmlUrl = releaseJson.optString("html_url", "https://github.com/Bn5prS/Photon_Gallery/releases")
++                val htmlUrl = releaseJson.optString("html_url", "https://github.com/llipinsk82-rgb/Photo_Gallery/releases")
+ 
+                 val latestCleanVersion = cleanVersionString(tagName)
+                 val currentCleanVersion = cleanVersionString(currentVersion)
+diff --git a/app/src/main/java/com/inferno/gallery/ui/CollageScreen.kt b/app/src/main/java/com/inferno/gallery/ui/CollageScreen.kt
+index 46399eb..c280771 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/CollageScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/CollageScreen.kt
+@@ -1254,7 +1254,7 @@ private suspend fun saveCollageToDevice(
+     val values = android.content.ContentValues().apply {
+         put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+         put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+-        put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/PhotonGallery_Collages")
++        put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/BlackServGallery_Collages")
+     }
+     val resolver = context.contentResolver
+     val outputUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+diff --git a/app/src/main/java/com/inferno/gallery/ui/DaySelection.kt b/app/src/main/java/com/inferno/gallery/ui/DaySelection.kt
+new file mode 100644
+index 0000000..2612e0f
+--- /dev/null
++++ b/app/src/main/java/com/inferno/gallery/ui/DaySelection.kt
+@@ -0,0 +1,40 @@
++package com.inferno.gallery.ui
++
++import com.inferno.gallery.data.MediaQueryBuilder
++import java.time.Instant
++import java.time.ZoneId
++
++/** A local calendar day expressed as an exclusive UTC range of Unix seconds. */
++data class DayWindow(val startInclusiveSeconds: Long, val endExclusiveSeconds: Long)
++
++fun dayWindow(timestampSeconds: Long, zoneId: ZoneId = ZoneId.systemDefault()): DayWindow {
++    val day = Instant.ofEpochSecond(timestampSeconds).atZone(zoneId).toLocalDate()
++    return DayWindow(
++        startInclusiveSeconds = day.atStartOfDay(zoneId).toEpochSecond(),
++        endExclusiveSeconds = day.plusDays(1).atStartOfDay(zoneId).toEpochSecond()
++    )
++}
++
++/** The first tap selects all of the day; the second tap clears only that day. */
++fun toggleWholeDaySelection(current: Set<String>, dayUris: Set<String>): Set<String> {
++    if (dayUris.isEmpty()) return current
++    return if (current.containsAll(dayUris)) current - dayUris else current + dayUris
++}
++
++/** Scope the day query to exactly the same album, filter and exclusions as the timeline. */
++fun buildDaySelectionConditions(
++    base: MediaQueryBuilder.QueryConditions,
++    timestampSeconds: Long,
++    order: SortOrder,
++    zoneId: ZoneId = ZoneId.systemDefault()
++): MediaQueryBuilder.QueryConditions {
++    val column = when (order) {
++        SortOrder.DateModifiedNewToOld, SortOrder.DateModifiedOldToNew -> "cm.dateModified"
++        else -> "cm.dateAdded"
++    }
++    val day = dayWindow(timestampSeconds, zoneId)
++    return MediaQueryBuilder.QueryConditions(
++        conditions = base.conditions + listOf("$column >= ?", "$column < ?"),
++        args = base.args + listOf(day.startInclusiveSeconds, day.endExclusiveSeconds)
++    )
++}
+diff --git a/app/src/main/java/com/inferno/gallery/ui/GalleryViewModel.kt b/app/src/main/java/com/inferno/gallery/ui/GalleryViewModel.kt
+index 55717e5..8fac107 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/GalleryViewModel.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/GalleryViewModel.kt
+@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.map
+ import kotlinx.coroutines.flow.receiveAsFlow
+ import kotlinx.coroutines.flow.flowOn
+ import kotlinx.coroutines.flow.first
++import kotlinx.coroutines.flow.update
+ import kotlinx.coroutines.flow.flowOf
+ import kotlinx.coroutines.flow.Flow
+ import kotlinx.coroutines.launch
+@@ -97,7 +98,7 @@ data class SmartSearchStatus(
+ 
+ sealed class GalleryListItem {
+     data class Item(val galleryItem: GalleryItem) : GalleryListItem()
+-    data class Header(val title: String, val id: String = title) : GalleryListItem()
++    data class Header(val title: String, val timestampSeconds: Long, val id: String = title) : GalleryListItem()
+ }
+ 
+ /**
+@@ -1234,6 +1235,39 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
+         _selectedUris.value = emptySet()
+     }
+ 
++    fun removeSelection(uris: Collection<String>) {
++        val removed = uris.toSet()
++        _selectedUris.update { it - removed }
++    }
++
++    /** Selects the complete date group, including items outside the loaded Paging window. */
++    fun toggleDaySelection(timestampSeconds: Long) {
++        viewModelScope.launch(Dispatchers.IO) {
++            val bucket = _currentBucket.value
++            val order = sortOrder.value
++            val base = MediaQueryBuilder.buildMediaConditions(
++                bucket = bucket,
++                filterIndex = selectedFilterIndex.value,
++                excluded = excludedFolders.value,
++                favIds = favoritesManager.favoritesFlow.first(),
++                ftsIds = ftsSearchResults.value.map { it.id },
++                smartIds = smartSearchResults.value.map { it.id }
++            )
++            val conditions = buildDaySelectionConditions(base, timestampSeconds, order)
++            val query = androidx.sqlite.db.SimpleSQLiteQuery(
++                "SELECT cm.uriString FROM core_media cm " + MediaQueryBuilder.buildWhereClause(conditions),
++                conditions.args.toTypedArray()
++            )
++            try {
++                val dayUris = database.mediaDao().getUrisRaw(query).toSet()
++                _selectedUris.update { selected -> toggleWholeDaySelection(selected, dayUris) }
++            } catch (e: Exception) {
++                Log.e("GalleryViewModel", "Unable to select date group", e)
++                showToast("Could not select this day")
++            }
++        }
++    }
++
+     private var baseSelectedUris = emptySet<String>()
+     private val _draggedUris = MutableStateFlow<Set<String>>(emptySet())
+     private var dragSelecting = true
+@@ -2933,7 +2967,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
+                     val afterTitle = formatGroupHeader(afterDate)
+ 
+                     if (before == null) {
+-                        GalleryListItem.Header(title = afterTitle, id = after.id)
++                        GalleryListItem.Header(title = afterTitle, timestampSeconds = afterDate, id = after.id)
+                     } else {
+                         val beforeDate = if (order == SortOrder.DateModifiedNewToOld || order == SortOrder.DateModifiedOldToNew) {
+                             before.dateModified
+@@ -2942,7 +2976,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
+                         }
+                         val beforeTitle = formatGroupHeader(beforeDate)
+                         if (beforeTitle != afterTitle) {
+-                            GalleryListItem.Header(title = afterTitle, id = after.id)
++                            GalleryListItem.Header(title = afterTitle, timestampSeconds = afterDate, id = after.id)
+                         } else {
+                             null
+                         }
+diff --git a/app/src/main/java/com/inferno/gallery/ui/ImageEditorScreen.kt b/app/src/main/java/com/inferno/gallery/ui/ImageEditorScreen.kt
+index ced63f2..d8bec2e 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/ImageEditorScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/ImageEditorScreen.kt
+@@ -601,7 +601,7 @@ fun ImageEditorScreen(
+                         val values = ContentValues().apply {
+                             put(MediaStore.Images.Media.DISPLAY_NAME, "Photon_Edit_${System.currentTimeMillis()}.jpg")
+                             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+-                            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Photon Gallery")
++                            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/BlackServ Gallery")
+                             put(MediaStore.Images.Media.IS_PENDING, 1)
+                         }
+                         val newUri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+diff --git a/app/src/main/java/com/inferno/gallery/ui/MainAppLayout.kt b/app/src/main/java/com/inferno/gallery/ui/MainAppLayout.kt
+index 28fa511..dc85a46 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/MainAppLayout.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/MainAppLayout.kt
+@@ -293,17 +293,54 @@ fun MainAppLayout(
+         updatePermissionStates()
+     }
+ 
++    // Separate the trash queue from the existing restore/permanent-delete state.
+     var pendingTrashUris by remember { mutableStateOf<List<String>>(emptyList()) }
++    var trashProgress by remember { mutableStateOf<TrashBatchProgress?>(null) }
+ 
+     val trashLauncher = rememberLauncherForActivityResult(
+         contract = ActivityResultContracts.StartIntentSenderForResult()
+     ) { result ->
+         if (result.resultCode == android.app.Activity.RESULT_OK) {
+-            val selected = pendingTrashUris.ifEmpty { viewModel.selectedUris.value.toList() }
+-            viewModel.trashSelectedMedia(selected)
+-            viewModel.clearSelection()
++            val approved = trashProgress?.currentBatch.orEmpty()
++            if (approved.isNotEmpty()) {
++                viewModel.trashSelectedMedia(approved)
++                viewModel.removeSelection(approved)
++                val next = trashProgress?.acceptCurrentBatch()
++                if (next?.isFinished == true) {
++                    Toast.makeText(context, "Moved ${next.completedCount} items to Recycle Bin", Toast.LENGTH_SHORT).show()
++                    trashProgress = null
++                } else {
++                    trashProgress = next
++                }
++            }
++        } else {
++            val completed = trashProgress?.completedCount ?: 0
++            if (completed > 0) {
++                Toast.makeText(context, "Stopped after $completed items. Remaining photos stay selected.", Toast.LENGTH_LONG).show()
++            }
++            trashProgress = null
++        }
++    }
++
++    // Only one platform confirmation request is active; the next batch is issued
++    // after the previous request returns RESULT_OK. Cancellation ends the chain.
++    LaunchedEffect(trashProgress) {
++        val batch = trashProgress?.currentBatch.orEmpty()
++        if (batch.isNotEmpty()) {
++            try {
++                val request = withContext(Dispatchers.IO) {
++                    val intent = android.provider.MediaStore.createTrashRequest(
++                        context.contentResolver, batch.map(Uri::parse), true
++                    )
++                    androidx.activity.result.IntentSenderRequest.Builder(intent.intentSender).build()
++                }
++                trashLauncher.launch(request)
++            } catch (e: Exception) {
++                val completed = trashProgress?.completedCount ?: 0
++                Toast.makeText(context, "Trash request failed after $completed items: ${e.message}", Toast.LENGTH_LONG).show()
++                trashProgress = null
++            }
+         }
+-        pendingTrashUris = emptyList()
+     }
+ 
+     val restoreLauncher = rememberLauncherForActivityResult(
+@@ -784,7 +821,7 @@ fun MainAppLayout(
+                                     "videos" -> "Videos"
+                                     "albums" -> "Albums"
+                                     "search" -> "Search"
+-                                    else -> "Photon Gallery"
++                                    else -> "BlackServ Gallery"
+                                 }
+                                 Text(
+                                     titleText,
+@@ -2202,27 +2239,8 @@ fun MainAppLayout(
+                         androidx.compose.material3.TextButton(
+                             onClick = {
+                                 showMultiDeleteConfirmDialog = false
+-                                val rawSelected = selectedUris.toList()
+-                                pendingTrashUris = rawSelected
+-                                val uris = rawSelected.map { Uri.parse(it) }
+-                                if (uris.isNotEmpty()) {
+-                                    coroutineScope.launch(Dispatchers.IO) {
+-                                        try {
+-                                            val trashIntent = android.provider.MediaStore.createTrashRequest(
+-                                                context.contentResolver,
+-                                                uris,
+-                                                true
+-                                            )
+-                                            val request = androidx.activity.result.IntentSenderRequest.Builder(trashIntent.intentSender).build()
+-                                            withContext(Dispatchers.Main) {
+-                                                trashLauncher.launch(request)
+-                                            }
+-                                        } catch (e: Exception) {
+-                                            withContext(Dispatchers.Main) {
+-                                                android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+-                                            }
+-                                        }
+-                                    }
++                                if (trashProgress == null && selectedUris.isNotEmpty()) {
++                                    trashProgress = TrashBatchProgress.start(selectedUris)
+                                 }
+                             }
+                         ) {
+@@ -2455,23 +2473,8 @@ fun MainAppLayout(
+                             if (confirmDeleteEnabled) {
+                                 showMultiDeleteConfirmDialog = true
+                             } else {
+-                                val rawSelected = selectedUris.toList()
+-                                pendingTrashUris = rawSelected
+-                                val uris = rawSelected.map { Uri.parse(it) }
+-                                if (uris.isNotEmpty()) {
+-                                    coroutineScope.launch(Dispatchers.IO) {
+-                                        try {
+-                                            val trashIntent = android.provider.MediaStore.createTrashRequest(context.contentResolver, uris, true)
+-                                            val request = androidx.activity.result.IntentSenderRequest.Builder(trashIntent.intentSender).build()
+-                                            withContext(Dispatchers.Main) {
+-                                                trashLauncher.launch(request)
+-                                            }
+-                                        } catch (e: Exception) {
+-                                            withContext(Dispatchers.Main) {
+-                                                android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+-                                            }
+-                                        }
+-                                    }
++                                if (trashProgress == null && selectedUris.isNotEmpty()) {
++                                    trashProgress = TrashBatchProgress.start(selectedUris)
+                                 }
+                             }
+                         }) {
+diff --git a/app/src/main/java/com/inferno/gallery/ui/PermissionsFlow.kt b/app/src/main/java/com/inferno/gallery/ui/PermissionsFlow.kt
+index daa2b8d..01d6e2f 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/PermissionsFlow.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/PermissionsFlow.kt
+@@ -437,7 +437,7 @@ private fun SetupWelcomePermissionsPage(
+                         )
+ 
+                         Text(
+-                            text = "Photon Gallery",
++                            text = "BlackServ Gallery",
+                             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                             color = MaterialTheme.colorScheme.primary,
+                             textAlign = TextAlign.Start
+diff --git a/app/src/main/java/com/inferno/gallery/ui/PhotoMapScreen.kt b/app/src/main/java/com/inferno/gallery/ui/PhotoMapScreen.kt
+index 3d47b6e..6ea2eb5 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/PhotoMapScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/PhotoMapScreen.kt
+@@ -164,7 +164,7 @@ fun PhotoMapScreen(
+                 geotaggedMedia.forEach { item ->
+                     val header = formatGroupHeader(item.dateAdded)
+                     if (header != lastHeader) {
+-                        list.add(GalleryListItem.Header(title = header, id = item.id))
++                        list.add(GalleryListItem.Header(title = header, timestampSeconds = item.dateAdded, id = item.id))
+                         lastHeader = header
+                     }
+                     list.add(GalleryListItem.Item(item))
+diff --git a/app/src/main/java/com/inferno/gallery/ui/SettingsScreen.kt b/app/src/main/java/com/inferno/gallery/ui/SettingsScreen.kt
+index c16fbd2..d679186 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/SettingsScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/SettingsScreen.kt
+@@ -372,7 +372,7 @@ fun SettingsScreen(
+             title = { Text("Privacy Notice", fontWeight = FontWeight.Bold) },
+             text = {
+                 Text(
+-                    text = "Photon Gallery is built with a privacy-first approach.\n\n" +
++                    text = "BlackServ Gallery is based on the privacy-first Photon Gallery project.\n\n" +
+                             "• All Smart Search, face detection, and OCR processing happens completely on your device.\n\n" +
+                             "• No telemetry, usage statistics, tracking analytics, or personal data is collected or uploaded to any remote servers.\n\n" +
+                             "• The application source code is fully open for anyone to inspect.",
+diff --git a/app/src/main/java/com/inferno/gallery/ui/StitchScreen.kt b/app/src/main/java/com/inferno/gallery/ui/StitchScreen.kt
+index 42e4bf8..d17b762 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/StitchScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/StitchScreen.kt
+@@ -1509,7 +1509,7 @@ private suspend fun saveStitchedImage(
+             val values = ContentValues().apply {
+                 put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                 put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+-                put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOCUMENTS + "/PhotonGallery_Stitch")
++                put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOCUMENTS + "/BlackServGallery_Stitch")
+             }
+             val resolver = context.contentResolver
+             val outputUri = resolver.insert(MediaStore.Files.getContentUri("external"), values)
+@@ -1602,7 +1602,7 @@ private suspend fun saveStitchedImage(
+     val values = ContentValues().apply {
+         put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+         put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+-        put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/PhotonGallery_Stitch")
++        put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/BlackServGallery_Stitch")
+     }
+     val resolver = context.contentResolver
+     val outputUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+diff --git a/app/src/main/java/com/inferno/gallery/ui/TrashBatchProgress.kt b/app/src/main/java/com/inferno/gallery/ui/TrashBatchProgress.kt
+new file mode 100644
+index 0000000..05be53e
+--- /dev/null
++++ b/app/src/main/java/com/inferno/gallery/ui/TrashBatchProgress.kt
+@@ -0,0 +1,24 @@
++package com.inferno.gallery.ui
++
++/** Immutable progress for sequential, user-confirmed MediaStore trash requests. */
++data class TrashBatchProgress private constructor(
++    val remaining: List<String>,
++    val completedCount: Int
++) {
++    val currentBatch: List<String> get() = remaining.take(MAX_REQUEST_URIS)
++    val isFinished: Boolean get() = remaining.isEmpty()
++
++    /** Call only after the platform returns RESULT_OK for [currentBatch]. */
++    fun acceptCurrentBatch(): TrashBatchProgress = copy(
++        remaining = remaining.drop(currentBatch.size),
++        completedCount = completedCount + currentBatch.size
++    )
++
++    companion object {
++        // MediaStore.createTrashRequest enforces this limit for recent Android targets.
++        const val MAX_REQUEST_URIS = 2000
++
++        fun start(selectedUris: Collection<String>): TrashBatchProgress =
++            TrashBatchProgress(selectedUris.distinct(), completedCount = 0)
++    }
++}
+diff --git a/app/src/main/java/com/inferno/gallery/ui/VideoFrameExtractorScreen.kt b/app/src/main/java/com/inferno/gallery/ui/VideoFrameExtractorScreen.kt
+index e2145ae..3104504 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/VideoFrameExtractorScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/VideoFrameExtractorScreen.kt
+@@ -211,7 +211,7 @@ fun VideoFrameExtractorScreen(
+                     val contentValues = ContentValues().apply {
+                         put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+-                        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Photon Gallery")
++                            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/BlackServ Gallery")
+                         put(MediaStore.Images.Media.IS_PENDING, 1)
+                         put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000L)
+                         put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
+@@ -241,7 +241,7 @@ fun VideoFrameExtractorScreen(
+ 
+             isSaving = false
+             if (success) {
+-                Toast.makeText(context, "Frame saved to Pictures/Photon Gallery", Toast.LENGTH_SHORT).show()
++                Toast.makeText(context, "Frame saved to Pictures/BlackServ Gallery", Toast.LENGTH_SHORT).show()
+             } else {
+                 Toast.makeText(context, "Failed to save frame", Toast.LENGTH_SHORT).show()
+             }
+diff --git a/app/src/main/java/com/inferno/gallery/ui/components/AboutScreenContent.kt b/app/src/main/java/com/inferno/gallery/ui/components/AboutScreenContent.kt
+index bc73b8b..77bcf14 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/components/AboutScreenContent.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/components/AboutScreenContent.kt
+@@ -112,8 +112,8 @@ fun AboutScreenContent(
+                     horizontalAlignment = Alignment.CenterHorizontally
+                 ) {
+                     Image(
+-                        painter = painterResource(id = R.drawable.launcher_icon_fg),
+-                        contentDescription = "Photon Gallery Logo",
++                        painter = painterResource(id = R.drawable.blackserv_launcher_foreground),
++                        contentDescription = "BlackServ Gallery logo",
+                         contentScale = ContentScale.Fit,
+                         modifier = Modifier.size(76.dp)
+                     )
+@@ -121,7 +121,7 @@ fun AboutScreenContent(
+                     Spacer(modifier = Modifier.height(16.dp))
+ 
+                     Text(
+-                        text = "Photon Gallery",
++                        text = "BlackServ Gallery",
+                         style = MaterialTheme.typography.headlineLarge,
+                         color = MaterialTheme.colorScheme.onSurface,
+                         fontWeight = FontWeight.Bold
+@@ -359,7 +359,7 @@ fun AboutScreenContent(
+                         icon = ImageVector.vectorResource(R.drawable.ic_ms_code),
+                         onClick = {
+                             haptic.tick()
+-                            uriHandler.openUri("https://github.com/Bn5prS/Photon_Gallery")
++                            uriHandler.openUri("https://github.com/llipinsk82-rgb/Photo_Gallery")
+                         }
+                     )
+                 },
+@@ -370,7 +370,7 @@ fun AboutScreenContent(
+                         icon = ImageVector.vectorResource(R.drawable.ic_ms_bug_report),
+                         onClick = {
+                             haptic.tick()
+-                            uriHandler.openUri("https://github.com/Bn5prS/Photon_Gallery/issues")
++                            uriHandler.openUri("https://github.com/llipinsk82-rgb/Photo_Gallery/issues")
+                         }
+                     )
+                 },
+@@ -408,7 +408,7 @@ fun AboutScreenContent(
+             verticalArrangement = Arrangement.spacedBy(4.dp)
+         ) {
+             Text(
+-                text = "Photon Gallery • Free & Open Source",
++                text = "BlackServ Gallery • Based on Photon Gallery by Bn5prS • GPLv3",
+                 style = MaterialTheme.typography.labelSmall,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                 letterSpacing = 0.5.sp
+diff --git a/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt b/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt
+index cb82f60..c7cf818 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/components/PhotonGrid.kt
+@@ -55,6 +55,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+ import androidx.compose.foundation.shape.CircleShape
+ import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+@@ -268,7 +269,11 @@ fun PhotonGrid(
+                                         pagedMedia[item.sourceIndex]
+                                     }
+                                     if (viewMode != ViewMode.Immersive) {
+-                                        TimelineSectionHeader(title = item.header.title, alignment = dateHeaderAlignment)
++                                        TimelineSectionHeader(
++                                            title = item.header.title,
++                                            alignment = dateHeaderAlignment,
++                                            onSelectDay = { viewModel.toggleDaySelection(item.header.timestampSeconds) }
++                                        )
+                                     }
+                                 }
+                                 is MosaicDisplayItem.BigTileItem -> {
+@@ -501,7 +506,8 @@ fun PhotonGrid(
+                                         stiffness = Spring.StiffnessMediumLow
+                                     )
+                                 ),
+-                                alignment = dateHeaderAlignment
++                                alignment = dateHeaderAlignment,
++                                onSelectDay = { viewModel.toggleDaySelection(listItem.timestampSeconds) }
+                             )
+                         } else if (listItem is GalleryListItem.Item) {
+                             val item = listItem.galleryItem
+@@ -597,7 +603,8 @@ fun PhotonGrid(
+ fun TimelineSectionHeader(
+     title: String,
+     modifier: Modifier = Modifier,
+-    alignment: String = "LEFT"
++    alignment: String = "LEFT",
++    onSelectDay: (() -> Unit)? = null
+ ) {
+     val isCenter = alignment == "CENTER"
+     Box(
+@@ -615,8 +622,21 @@ fun TimelineSectionHeader(
+             text = title,
+             style = TimelineDateHeaderStyle,
+             color = MaterialTheme.colorScheme.onSurface,
++            modifier = if (onSelectDay != null) Modifier.padding(end = 56.dp) else Modifier,
+             textAlign = if (isCenter) androidx.compose.ui.text.style.TextAlign.Center else androidx.compose.ui.text.style.TextAlign.Start
+         )
++        if (onSelectDay != null) {
++            IconButton(
++                onClick = onSelectDay,
++                modifier = Modifier.align(Alignment.CenterEnd)
++            ) {
++                Icon(
++                    imageVector = ImageVector.vectorResource(R.drawable.ic_ms_select_all),
++                    contentDescription = "Select or deselect all photos from $title",
++                    tint = MaterialTheme.colorScheme.primary
++                )
++            }
++        }
+     }
+ }
+ 
+diff --git a/app/src/main/java/com/inferno/gallery/ui/components/UpdateDialog.kt b/app/src/main/java/com/inferno/gallery/ui/components/UpdateDialog.kt
+index c610790..7fe8027 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/components/UpdateDialog.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/components/UpdateDialog.kt
+@@ -889,7 +889,7 @@ fun UpdateDialog() {
+                         )
+                         Spacer(modifier = Modifier.height(SpacingTokens.XS))
+                         Text(
+-                            text = "Photon Gallery ${state.currentVersion} is currently the newest version available.",
++                            text = "BlackServ Gallery ${state.currentVersion} is currently the newest version available.",
+                             style = MaterialTheme.typography.bodyMedium,
+                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                             modifier = Modifier.padding(horizontal = SpacingTokens.S)
+diff --git a/app/src/main/java/com/inferno/gallery/ui/components/UpdateLogScreen.kt b/app/src/main/java/com/inferno/gallery/ui/components/UpdateLogScreen.kt
+index 8befad8..ba3b9df 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/components/UpdateLogScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/components/UpdateLogScreen.kt
+@@ -57,6 +57,16 @@ data class UpdateLogEntry(
+ )
+ 
+ val UpdateLogEntries = listOf(
++    UpdateLogEntry(
++        versionName = "3.0.0-blackserv.1",
++        buildCode = 12,
++        date = "Nov 1, 2026",
++        changes = listOf(
++            "BlackServ Gallery fork installs separately from Photon Gallery",
++            "Select or deselect every photo from a date inside an album, including Screenshots",
++            "Combine multiple days and move selections to Recycle Bin in safe batches"
++        )
++    ),
+     UpdateLogEntry(
+         versionName = "2.1.3",
+         buildCode = 10,
+@@ -205,7 +215,7 @@ fun UpdateLogContent(
+                                 fontWeight = FontWeight.Bold
+                             )
+                             Text(
+-                                text = "Every Photon Gallery release, newest first",
++                                text = "Every BlackServ Gallery release, newest first",
+                                 style = MaterialTheme.typography.bodyMedium,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant
+                             )
+diff --git a/app/src/main/java/com/inferno/gallery/ui/people/PeopleScreen.kt b/app/src/main/java/com/inferno/gallery/ui/people/PeopleScreen.kt
+index e5c7b68..63bae89 100644
+--- a/app/src/main/java/com/inferno/gallery/ui/people/PeopleScreen.kt
++++ b/app/src/main/java/com/inferno/gallery/ui/people/PeopleScreen.kt
+@@ -962,7 +962,7 @@ fun PeopleScreen(
+                             )
+ 
+                             Text(
+-                                text = "Photon Gallery clusters faces automatically in the background when charging. Only people appearing in at least 3 photos are grouped here to eliminate clutter.",
++                                text = "BlackServ Gallery clusters faces automatically in the background when charging. Only people appearing in at least 3 photos are grouped here to eliminate clutter.",
+                                 style = MaterialTheme.typography.bodyMedium,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                 textAlign = TextAlign.Center,
+diff --git a/app/src/main/java/com/inferno/gallery/update/UpdateManager.kt b/app/src/main/java/com/inferno/gallery/update/UpdateManager.kt
+index 1d0f3f7..341c7bf 100644
+--- a/app/src/main/java/com/inferno/gallery/update/UpdateManager.kt
++++ b/app/src/main/java/com/inferno/gallery/update/UpdateManager.kt
+@@ -113,7 +113,7 @@ object UpdateManager {
+         downloadJob = scope.launch(Dispatchers.IO) {
+             try {
+                 val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
+-                val targetFileName = info.apkFileName ?: "PhotonGallery-${info.latestVersion}.apk"
++                val targetFileName = info.apkFileName ?: "BlackServGallery-${info.latestVersion}.apk"
+                 val apkFile = File(updatesDir, targetFileName)
+ 
+                 // If already downloaded and valid, skip download
+@@ -129,7 +129,7 @@ object UpdateManager {
+ 
+                 val request = Request.Builder()
+                     .url(downloadUrl)
+-                    .header("User-Agent", "PhotonGallery-App")
++                    .header("User-Agent", "BlackServGallery-App")
+                     .build()
+ 
+                 httpClient.newCall(request).execute().use { response ->
+diff --git a/app/src/main/java/com/inferno/gallery/update/UpdateNotificationHelper.kt b/app/src/main/java/com/inferno/gallery/update/UpdateNotificationHelper.kt
+index f489d39..d9a86a4 100644
+--- a/app/src/main/java/com/inferno/gallery/update/UpdateNotificationHelper.kt
++++ b/app/src/main/java/com/inferno/gallery/update/UpdateNotificationHelper.kt
+@@ -22,7 +22,7 @@ object UpdateNotificationHelper {
+             "App Updates",
+             NotificationManager.IMPORTANCE_DEFAULT
+         ).apply {
+-            description = "Notifies when a new version of Photon Gallery is available"
++            description = "Notifies when a new version of BlackServ Gallery is available"
+             enableLights(true)
+             enableVibration(true)
+         }
+@@ -59,7 +59,7 @@ object UpdateNotificationHelper {
+ 
+         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+             .setSmallIcon(R.drawable.ic_ms_download)
+-            .setContentTitle("Photon Gallery ${updateInfo.latestVersion} Available")
++            .setContentTitle("BlackServ Gallery ${updateInfo.latestVersion} Available")
+             .setContentText(summaryText)
+             .setStyle(
+                 NotificationCompat.BigTextStyle()
+diff --git a/app/src/main/java/com/inferno/gallery/workers/UpdateCheckWorker.kt b/app/src/main/java/com/inferno/gallery/workers/UpdateCheckWorker.kt
+index 4de213a..ad8d797 100644
+--- a/app/src/main/java/com/inferno/gallery/workers/UpdateCheckWorker.kt
++++ b/app/src/main/java/com/inferno/gallery/workers/UpdateCheckWorker.kt
+@@ -62,7 +62,7 @@ class UpdateCheckWorker(
+                 Log.i(TAG, "New update found: ${updateInfo.latestVersion}. Showing notification.")
+                 UpdateNotificationHelper.showUpdateNotification(applicationContext, updateInfo)
+             } else {
+-                Log.d(TAG, "Photon Gallery is up to date ($currentVersion)")
++                Log.d(TAG, "BlackServ Gallery is up to date ($currentVersion)")
+             }
+ 
+             Result.success()
+diff --git a/app/src/main/res/drawable/blackserv_launcher_background.xml b/app/src/main/res/drawable/blackserv_launcher_background.xml
+new file mode 100644
+index 0000000..bd5bf05
+--- /dev/null
++++ b/app/src/main/res/drawable/blackserv_launcher_background.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="utf-8"?>
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="108dp"
++    android:height="108dp"
++    android:viewportWidth="108"
++    android:viewportHeight="108">
++    <path android:fillColor="#102638" android:pathData="M0,0h108v108h-108z" />
++</vector>
+diff --git a/app/src/main/res/drawable/blackserv_launcher_foreground.xml b/app/src/main/res/drawable/blackserv_launcher_foreground.xml
+new file mode 100644
+index 0000000..46145aa
+--- /dev/null
++++ b/app/src/main/res/drawable/blackserv_launcher_foreground.xml
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="utf-8"?>
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="108dp"
++    android:height="108dp"
++    android:viewportWidth="108"
++    android:viewportHeight="108">
++    <!-- A new BlackServ tile: framed photo with a prominent selected-day check. -->
++    <path android:fillColor="#EAF8F5" android:pathData="M34,27h40c5,0 9,4 9,9v37c0,5 -4,9 -9,9h-40c-5,0 -9,-4 -9,-9v-37c0,-5 4,-9 9,-9z" />
++    <path android:fillColor="#1D4C5E" android:pathData="M36,34h36c2,0 4,2 4,4v29c0,2 -2,4 -4,4h-36c-2,0 -4,-2 -4,-4v-29c0,-2 2,-4 4,-4z" />
++    <path android:fillColor="#9BE4B5" android:pathData="M35,65l13,-15 8,8 7,-7 12,14v3h-40z" />
++    <path android:fillColor="#EAF8F5" android:pathData="M45,40a5,5 0,1 0,0.01 0z" />
++    <path android:fillColor="#B4FF76" android:pathData="M70,59a15,15 0,1 0,0.01 0z" />
++    <path android:fillColor="#102638" android:pathData="M62,73l6,6 11,-13 -3,-3 -8,10 -3,-3z" />
++</vector>
+diff --git a/app/src/main/res/mipmap-anydpi-v26/blackserv_launcher.xml b/app/src/main/res/mipmap-anydpi-v26/blackserv_launcher.xml
+new file mode 100644
+index 0000000..c163b36
+--- /dev/null
++++ b/app/src/main/res/mipmap-anydpi-v26/blackserv_launcher.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="utf-8"?>
++<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
++    <background android:drawable="@drawable/blackserv_launcher_background" />
++    <foreground android:drawable="@drawable/blackserv_launcher_foreground" />
++    <monochrome android:drawable="@drawable/blackserv_launcher_foreground" />
++</adaptive-icon>
+diff --git a/app/src/main/res/mipmap-anydpi-v26/blackserv_launcher_round.xml b/app/src/main/res/mipmap-anydpi-v26/blackserv_launcher_round.xml
+new file mode 100644
+index 0000000..c163b36
+--- /dev/null
++++ b/app/src/main/res/mipmap-anydpi-v26/blackserv_launcher_round.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="utf-8"?>
++<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
++    <background android:drawable="@drawable/blackserv_launcher_background" />
++    <foreground android:drawable="@drawable/blackserv_launcher_foreground" />
++    <monochrome android:drawable="@drawable/blackserv_launcher_foreground" />
++</adaptive-icon>
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 6c45093..8af8712 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -1,6 +1,6 @@
+ <resources>
+     <!-- Application Brand -->
+-    <string name="app_name">Photon Gallery</string>
++    <string name="app_name">BlackServ Gallery</string>
+     <string name="app_description">An open-source, offline Android gallery designed around privacy, performance, and stunning visuals.</string>
+ 
+     <!-- Navigation & Tabs -->
+@@ -97,4 +97,4 @@
+     <string name="report_issue">Report Issue &amp; Feedback</string>
+     <string name="open_source_licenses">Open Source Licenses</string>
+     <string name="privacy_guarantee">Privacy Policy &amp; Guarantee</string>
+-</resources>
+\ No newline at end of file
++</resources>
+diff --git a/app/src/test/java/com/inferno/gallery/ui/DaySelectionTest.kt b/app/src/test/java/com/inferno/gallery/ui/DaySelectionTest.kt
+new file mode 100644
+index 0000000..d892821
+--- /dev/null
++++ b/app/src/test/java/com/inferno/gallery/ui/DaySelectionTest.kt
+@@ -0,0 +1,122 @@
++package com.inferno.gallery.ui
++
++import com.inferno.gallery.data.MediaQueryBuilder
++import com.inferno.gallery.data.BucketNames
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertTrue
++import org.junit.Test
++import java.time.Instant
++import java.time.ZoneId
++
++class DaySelectionTest {
++    private val london = ZoneId.of("Europe/London")
++
++    @Test
++    fun springClockChangeHasTwentyThreeHourDay() {
++        val midday = Instant.parse("2026-03-29T12:00:00Z").epochSecond
++        val window = dayWindow(midday, london)
++
++        assertEquals(Instant.parse("2026-03-29T00:00:00Z").epochSecond, window.startInclusiveSeconds)
++        assertEquals(Instant.parse("2026-03-29T23:00:00Z").epochSecond, window.endExclusiveSeconds)
++    }
++
++    @Test
++    fun autumnClockChangeHasTwentyFiveHourDay() {
++        val midday = Instant.parse("2026-10-25T12:00:00Z").epochSecond
++        val window = dayWindow(midday, london)
++
++        assertEquals(Instant.parse("2026-10-24T23:00:00Z").epochSecond, window.startInclusiveSeconds)
++        assertEquals(Instant.parse("2026-10-26T00:00:00Z").epochSecond, window.endExclusiveSeconds)
++    }
++
++    @Test
++    fun midnightBelongsToNewLocalDay() {
++        val midnight = Instant.parse("2026-08-01T23:00:00Z").epochSecond
++        val window = dayWindow(midnight, london)
++
++        assertEquals(Instant.parse("2026-08-01T23:00:00Z").epochSecond, window.startInclusiveSeconds)
++        assertEquals(Instant.parse("2026-08-02T23:00:00Z").epochSecond, window.endExclusiveSeconds)
++    }
++
++    @Test
++    fun tappingSeparateDaysAccumulatesThenRemovesOnlyTargetDay() {
++        val first = toggleWholeDaySelection(emptySet(), setOf("a", "b"))
++        val both = toggleWholeDaySelection(first, setOf("c", "d"))
++        val secondOnly = toggleWholeDaySelection(both, setOf("a", "b"))
++
++        assertEquals(setOf("a", "b", "c", "d"), both)
++        assertEquals(setOf("c", "d"), secondOnly)
++    }
++
++    @Test
++    fun partiallySelectedDayIsCompletedNotCleared() {
++        val selected = toggleWholeDaySelection(setOf("a", "other"), setOf("a", "b"))
++        assertEquals(setOf("a", "b", "other"), selected)
++    }
++
++    @Test
++    fun emptyDayDoesNotClearExistingSelection() {
++        assertEquals(setOf("keep"), toggleWholeDaySelection(setOf("keep"), emptySet()))
++    }
++
++    @Test
++    fun dayQueryKeepsCurrentAlbumScopeAndUsesAddedDate() {
++        val source = MediaQueryBuilder.buildMediaConditions(bucket = "Camera", filterIndex = 0)
++        val instant = Instant.parse("2026-10-29T13:00:00Z").epochSecond
++        val query = buildDaySelectionConditions(source, instant, SortOrder.NewToOld, london)
++        val where = MediaQueryBuilder.buildWhereClause(query)
++
++        assertTrue(where.contains("cm.bucketName = ?"))
++        assertTrue(where.contains("cm.dateAdded >= ?"))
++        assertTrue(where.contains("cm.dateAdded < ?"))
++        assertEquals(listOf("Camera", Instant.parse("2026-10-29T00:00:00Z").epochSecond,
++            Instant.parse("2026-10-30T00:00:00Z").epochSecond), query.args)
++    }
++
++    @Test
++    fun modifiedSortUsesModifiedDateWithoutTouchingOtherFilters() {
++        val source = MediaQueryBuilder.buildMediaConditions(bucket = null, filterIndex = 1)
++        val instant = Instant.parse("2026-10-29T13:00:00Z").epochSecond
++        val query = buildDaySelectionConditions(source, instant, SortOrder.DateModifiedOldToNew, london)
++        val where = MediaQueryBuilder.buildWhereClause(query)
++
++        assertTrue(where.contains("cm.dateModified >= ?"))
++        assertTrue(where.contains("cm.dateModified < ?"))
++        assertFalse(where.contains("cm.dateAdded >= ?"))
++        assertTrue(where.contains("'Camera'"))
++    }
++
++    @Test
++    fun screenshotsDayDoesNotIncludeOtherAlbumsFromSameDate() {
++        val scope = MediaQueryBuilder.buildMediaConditions(
++            bucket = BucketNames.SCREENSHOTS,
++            filterIndex = 0
++        )
++        val query = buildDaySelectionConditions(
++            scope, Instant.parse("2026-10-29T08:00:00Z").epochSecond, SortOrder.NewToOld, london
++        )
++        val where = MediaQueryBuilder.buildWhereClause(query)
++
++        assertTrue(where.contains("cm.bucketName = 'Screenshots'"))
++        assertTrue(where.contains("cm.filePath LIKE '%/Screenshots/%'"))
++        assertTrue(where.contains("cm.dateAdded >= ?"))
++        assertTrue(where.contains("cm.dateAdded < ?"))
++        assertTrue(where.contains("cm.bucketName != 'Trash'"))
++        assertEquals(2, query.args.size) // No unrelated Camera or DCIM filter parameters
++    }
++
++    @Test
++    fun namedAlbumDayIsStrictlyLimitedToThatFolder() {
++        val scope = MediaQueryBuilder.buildMediaConditions(
++            bucket = "WhatsApp Images", filterIndex = 0
++        )
++        val query = buildDaySelectionConditions(
++            scope, Instant.parse("2026-10-29T08:00:00Z").epochSecond, SortOrder.OldToNew, london
++        )
++
++        assertTrue(MediaQueryBuilder.buildWhereClause(query).contains("cm.bucketName = ?"))
++        assertEquals("WhatsApp Images", query.args.first())
++        assertEquals(3, query.args.size)
++    }
++}
+diff --git a/app/src/test/java/com/inferno/gallery/ui/TrashBatchProgressTest.kt b/app/src/test/java/com/inferno/gallery/ui/TrashBatchProgressTest.kt
+new file mode 100644
+index 0000000..db5772c
+--- /dev/null
++++ b/app/src/test/java/com/inferno/gallery/ui/TrashBatchProgressTest.kt
+@@ -0,0 +1,52 @@
++package com.inferno.gallery.ui
++
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertTrue
++import org.junit.Test
++
++class TrashBatchProgressTest {
++    @Test fun emptySelectionHasNoRequest() {
++        assertTrue(TrashBatchProgress.start(emptyList()).isFinished)
++        assertTrue(TrashBatchProgress.start(emptyList()).currentBatch.isEmpty())
++    }
++
++    @Test fun oneItemUsesOneRequest() {
++        val initial = TrashBatchProgress.start(listOf("one"))
++        assertEquals(listOf("one"), initial.currentBatch)
++        val accepted = initial.acceptCurrentBatch()
++        assertTrue(accepted.isFinished)
++        assertEquals(1, accepted.completedCount)
++    }
++
++    @Test fun exactlyTwoThousandItemsFitOneRequest() {
++        val items = (1..2000).map { "uri-$it" }
++        val initial = TrashBatchProgress.start(items)
++        assertEquals(2000, initial.currentBatch.size)
++        assertTrue(initial.acceptCurrentBatch().isFinished)
++    }
++
++    @Test fun twoThousandAndOneRequiresSeparateConfirmation() {
++        val items = (1..2001).map { "uri-$it" }
++        val initial = TrashBatchProgress.start(items)
++        assertEquals(2000, initial.currentBatch.size)
++        val afterFirst = initial.acceptCurrentBatch()
++        assertFalse(afterFirst.isFinished)
++        assertEquals(listOf("uri-2001"), afterFirst.currentBatch)
++        assertEquals(2000, afterFirst.completedCount)
++        assertEquals(2001, afterFirst.acceptCurrentBatch().completedCount)
++    }
++
++    @Test fun cancellationDoesNotMarkUnconfirmedMediaAsProcessed() {
++        val initial = TrashBatchProgress.start((1..2100).map { "uri-$it" })
++        val afterFirst = initial.acceptCurrentBatch()
++        assertEquals(100, afterFirst.remaining.size)
++        assertEquals(2000, afterFirst.completedCount)
++        // No acceptCurrentBatch() call on platform RESULT_CANCELED.
++        assertEquals((2001..2100).map { "uri-$it" }, afterFirst.remaining)
++    }
++
++    @Test fun duplicateUrisAreNeverSentTwice() {
++        assertEquals(listOf("a", "b"), TrashBatchProgress.start(listOf("a", "a", "b")).currentBatch)
++    }
++}
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index 58812c2..19d8922 100644
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -11,9 +11,6 @@ pluginManagement {
+         gradlePluginPortal()
+     }
+ }
+-plugins {
+-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+-}
+ dependencyResolutionManagement {
+     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+     repositories {
