@@ -31,12 +31,19 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Use preinstalled Android SDK
+      - name: Install Android command-line tools
         run: |
-          echo "$ANDROID_HOME/cmdline-tools/16.0/bin" >> "$GITHUB_PATH"
-          "$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager" --version
+          mkdir -p "$RUNNER_TEMP/blackserv-sdk/cmdline-tools"
+          curl --fail --location --silent --show-error "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip" -o "$RUNNER_TEMP/commandlinetools.zip"
+          unzip -q "$RUNNER_TEMP/commandlinetools.zip" -d "$RUNNER_TEMP/blackserv-sdk/cmdline-tools"
+          mv "$RUNNER_TEMP/blackserv-sdk/cmdline-tools/cmdline-tools" "$RUNNER_TEMP/blackserv-sdk/cmdline-tools/latest"
+          echo "ANDROID_HOME=$RUNNER_TEMP/blackserv-sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$RUNNER_TEMP/blackserv-sdk" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/blackserv-sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
       - name: Install Android SDK 37
-        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0" "platform-tools"
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-37.0" "build-tools;37.0.0" "platform-tools"
       - name: Run selection and batch tests
         working-directory: source
         run: ./gradlew :app:testDebugUnitTest --no-daemon
