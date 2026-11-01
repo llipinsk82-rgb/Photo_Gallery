@@ -1,0 +1,84 @@
+name: Build BlackServ Gallery APK
+
+on:
+  push:
+    branches:
+      - feature/blackserv-gallery-day-selection
+    paths:
+      - patches/**
+      - .github/workflows/build-blackserv-gallery.yml
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    name: Tests and Android APK
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out pinned Photon Gallery source
+        run: |
+          git clone --no-checkout --depth 1 https://github.com/Bn5prS/Photon_Gallery.git source
+          git -C source fetch --depth 1 origin 382c7a28fbda1907d76d12a43f604ed6d50b181e
+          git -C source checkout --detach FETCH_HEAD
+      - name: Apply BlackServ Gallery changes
+        run: |
+          git -C source apply --check ../patches/blackserv-gallery-day-selection.patch
+          git -C source apply ../patches/blackserv-gallery-day-selection.patch
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 37
+        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0" "platform-tools"
+      - name: Run selection and batch tests
+        working-directory: source
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+      - name: Assemble experimental APK
+        working-directory: source
+        run: ./gradlew :app:assembleRelease --no-daemon
+      - name: Verify separate Android application ID
+        run: |
+          "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging source/app/build/outputs/apk/release/BlackServGallery-arm64-v8a.apk | grep "package: name='eu.blackserv.gallery'"
+      - name: Upload APK for device testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlackServGallery-test-apk-debug-signed
+          path: source/app/build/outputs/apk/release/BlackServGallery-*.apk
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload test reports if a task failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackserv-test-reports
+          path: source/app/build/reports/tests/
+          if-no-files-found: ignore
+
+  publish-source:
+    name: Publish standalone source branch
+    needs: test-and-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare full fork source
+        run: |
+          git clone --no-checkout --depth 1 https://github.com/Bn5prS/Photon_Gallery.git source
+          git -C source fetch --depth 1 origin 382c7a28fbda1907d76d12a43f604ed6d50b181e
+          git -C source checkout --detach FETCH_HEAD
+          git -C source apply ../patches/blackserv-gallery-day-selection.patch
+          git -C source config user.name "github-actions[bot]"
+          git -C source config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C source add -A
+          git -C source commit -m "feat: BlackServ Gallery with daily album selection"
+      - name: Push source as a new branch without overwriting main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git -C source remote add blackserv "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git -C source push blackserv HEAD:refs/heads/source/blackserv-gallery
