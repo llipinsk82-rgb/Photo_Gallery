@@ -281,11 +281,11 @@ interface FaceDao {
     @Query("UPDATE faces SET personId = :targetPersonId WHERE id IN (:faceIds) AND personId = :sourcePersonId")
     suspend fun reassignFacesByIds(faceIds: List<Long>, sourcePersonId: Long, targetPersonId: Long)
 
-    @Query("UPDATE faces SET personId = :targetPersonId WHERE id IN (:faceIds)")
-    suspend fun forceAssignFacesByIds(faceIds: List<Long>, targetPersonId: Long)
-
     @Query("SELECT id FROM faces WHERE personId = :personId")
     suspend fun getFaceIdsByPersonId(personId: Long): List<Long>
+
+    @Query("SELECT id FROM faces WHERE id IN (:faceIds) AND personId = :personId")
+    suspend fun getFaceIdsFromSetAssignedToPerson(faceIds: List<Long>, personId: Long): List<Long>
 
     @Insert
     suspend fun insertMergeHistory(history: PersonMergeHistoryEntity): Long
@@ -307,6 +307,12 @@ interface FaceDao {
 
     @Query("DELETE FROM person_merge_history WHERE id = :mergeId")
     suspend fun deleteMergeHistory(mergeId: Long)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMergeExclusion(exclusion: PersonMergeExclusionEntity)
+
+    @Query("SELECT * FROM person_merge_exclusions")
+    suspend fun getAllMergeExclusions(): List<PersonMergeExclusionEntity>
 
     @Query("""
         SELECT COUNT(id) FROM core_media 
@@ -372,7 +378,8 @@ interface FaceDao {
         val target = getPersonById(targetPersonId) ?: return null
         if (getPersonById(history.sourcePersonId) != null) return null
 
-        val faceIds = getMergeHistoryFaceIds(history.id)
+        val historyFaceIds = getMergeHistoryFaceIds(history.id)
+        val faceIds = getFaceIdsFromSetAssignedToPerson(historyFaceIds, targetPersonId)
         if (faceIds.isEmpty()) {
             deleteMergeHistoryFaces(history.id)
             deleteMergeHistory(history.id)
@@ -392,7 +399,20 @@ interface FaceDao {
                 createdAt = history.sourceCreatedAt
             )
         )
-        forceAssignFacesByIds(faceIds, history.sourcePersonId)
+        reassignFacesByIds(
+            faceIds = faceIds,
+            sourcePersonId = targetPersonId,
+            targetPersonId = history.sourcePersonId
+        )
+
+        val personA = minOf(history.sourcePersonId, targetPersonId)
+        val personB = maxOf(history.sourcePersonId, targetPersonId)
+        insertMergeExclusion(
+            PersonMergeExclusionEntity(
+                personIdA = personA,
+                personIdB = personB
+            )
+        )
 
         // Only roll back metadata that the merge itself could have inherited.
         var restoredTarget = target
