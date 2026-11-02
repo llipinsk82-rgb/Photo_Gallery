@@ -180,6 +180,9 @@ interface FaceDao {
     @Query("SELECT * FROM faces WHERE personId = :personId")
     suspend fun getFacesByPersonId(personId: Long): List<FaceEntity>
 
+    @Query("SELECT * FROM faces WHERE personId = :personId ORDER BY qualityScore DESC")
+    fun observeFacesByPersonId(personId: Long): Flow<List<FaceEntity>>
+
     @Query("SELECT * FROM faces WHERE personId = :personId AND isExemplar = 1 ORDER BY qualityScore DESC LIMIT 5")
     suspend fun getExemplarFacesForPerson(personId: Long): List<FaceEntity>
 
@@ -275,6 +278,36 @@ interface FaceDao {
     @Query("UPDATE faces SET personId = :targetPersonId WHERE mediaId IN (:mediaIds) AND personId = :sourcePersonId")
     suspend fun reassignFacesForMedia(mediaIds: List<Long>, sourcePersonId: Long, targetPersonId: Long)
 
+    @Query("UPDATE faces SET personId = :targetPersonId WHERE id IN (:faceIds) AND personId = :sourcePersonId")
+    suspend fun reassignFacesByIds(faceIds: List<Long>, sourcePersonId: Long, targetPersonId: Long)
+
+    @Query("UPDATE faces SET personId = :targetPersonId WHERE id IN (:faceIds)")
+    suspend fun forceAssignFacesByIds(faceIds: List<Long>, targetPersonId: Long)
+
+    @Query("SELECT id FROM faces WHERE personId = :personId")
+    suspend fun getFaceIdsByPersonId(personId: Long): List<Long>
+
+    @Insert
+    suspend fun insertMergeHistory(history: PersonMergeHistoryEntity): Long
+
+    @Insert
+    suspend fun insertMergeHistoryFaces(items: List<PersonMergeHistoryFaceEntity>)
+
+    @Query("SELECT * FROM person_merge_history WHERE targetPersonId = :targetPersonId ORDER BY createdAt DESC, id DESC LIMIT 1")
+    suspend fun getLatestMergeHistoryForTarget(targetPersonId: Long): PersonMergeHistoryEntity?
+
+    @Query("SELECT * FROM person_merge_history WHERE targetPersonId = :targetPersonId ORDER BY createdAt DESC, id DESC LIMIT 1")
+    fun observeLatestMergeHistoryForTarget(targetPersonId: Long): Flow<PersonMergeHistoryEntity?>
+
+    @Query("SELECT faceId FROM person_merge_history_faces WHERE mergeId = :mergeId")
+    suspend fun getMergeHistoryFaceIds(mergeId: Long): List<Long>
+
+    @Query("DELETE FROM person_merge_history_faces WHERE mergeId = :mergeId")
+    suspend fun deleteMergeHistoryFaces(mergeId: Long)
+
+    @Query("DELETE FROM person_merge_history WHERE id = :mergeId")
+    suspend fun deleteMergeHistory(mergeId: Long)
+
     @Query("""
         SELECT COUNT(id) FROM core_media 
         WHERE isVideo = 0 
@@ -289,23 +322,97 @@ interface FaceDao {
         targetPersonId: Long,
         mergedCentroid: FloatArray,
         faceCount: Int,
-        coverCropPath: String?
+        coverCropPath: String?,
+        recordHistory: Boolean = true
     ) {
-        val source = getPersonById(sourcePersonId)
+        val source = getPersonById(sourcePersonId) ?: return
         val target = getPersonById(targetPersonId) ?: return
+
+        if (recordHistory) {
+            val faceIds = getFaceIdsByPersonId(sourcePersonId)
+            if (faceIds.isNotEmpty()) {
+                val mergeId = insertMergeHistory(
+                    PersonMergeHistoryEntity(
+                        sourcePersonId = source.id,
+                        targetPersonId = target.id,
+                        sourceName = source.name,
+                        sourceCoverCropPath = source.coverCropPath,
+                        sourceIsHidden = source.isHidden,
+                        sourceIsFavorite = source.isFavorite,
+                        sourceIsPromoted = source.isPromoted,
+                        sourceCreatedAt = source.createdAt,
+                        targetNameBefore = target.name,
+                        targetCoverCropPathBefore = target.coverCropPath
+                    )
+                )
+                insertMergeHistoryFaces(faceIds.map { faceId ->
+                    PersonMergeHistoryFaceEntity(mergeId = mergeId, faceId = faceId)
+                })
+            }
+        }
+
         deleteMergeSuggestionsForPerson(sourcePersonId)
         reassignFaces(sourcePersonId, targetPersonId)
         val distinctPhotoCount = countDistinctMediaForPerson(targetPersonId)
-        val finalName = if (!target.name.isNullOrBlank()) target.name else source?.name
+        val finalName = if (!target.name.isNullOrBlank()) target.name else source.name
         val updated = target.copy(
             name = finalName,
             centroid = mergedCentroid,
             faceCount = distinctPhotoCount,
-            coverCropPath = coverCropPath ?: target.coverCropPath ?: source?.coverCropPath,
+            coverCropPath = coverCropPath ?: target.coverCropPath ?: source.coverCropPath,
             isPromoted = true
         )
         updatePerson(updated)
         deletePerson(sourcePersonId)
+    }
+
+    @Transaction
+    suspend fun undoLatestMergeAssignments(targetPersonId: Long): PersonMergeHistoryEntity? {
+        val history = getLatestMergeHistoryForTarget(targetPersonId) ?: return null
+        val target = getPersonById(targetPersonId) ?: return null
+        if (getPersonById(history.sourcePersonId) != null) return null
+
+        val faceIds = getMergeHistoryFaceIds(history.id)
+        if (faceIds.isEmpty()) {
+            deleteMergeHistoryFaces(history.id)
+            deleteMergeHistory(history.id)
+            return null
+        }
+
+        insertPerson(
+            PersonEntity(
+                id = history.sourcePersonId,
+                name = history.sourceName,
+                coverCropPath = history.sourceCoverCropPath,
+                isHidden = history.sourceIsHidden,
+                isFavorite = history.sourceIsFavorite,
+                isPromoted = history.sourceIsPromoted,
+                faceCount = 0,
+                centroid = null,
+                createdAt = history.sourceCreatedAt
+            )
+        )
+        forceAssignFacesByIds(faceIds, history.sourcePersonId)
+
+        // Only roll back metadata that the merge itself could have inherited.
+        var restoredTarget = target
+        if (history.targetNameBefore.isNullOrBlank() &&
+            !history.sourceName.isNullOrBlank() &&
+            target.name == history.sourceName
+        ) {
+            restoredTarget = restoredTarget.copy(name = history.targetNameBefore)
+        }
+        if (history.targetCoverCropPathBefore == null &&
+            history.sourceCoverCropPath != null &&
+            target.coverCropPath == history.sourceCoverCropPath
+        ) {
+            restoredTarget = restoredTarget.copy(coverCropPath = history.targetCoverCropPathBefore)
+        }
+        if (restoredTarget != target) updatePerson(restoredTarget)
+
+        deleteMergeHistoryFaces(history.id)
+        deleteMergeHistory(history.id)
+        return history
     }
 
     @Query("DELETE FROM faces")
