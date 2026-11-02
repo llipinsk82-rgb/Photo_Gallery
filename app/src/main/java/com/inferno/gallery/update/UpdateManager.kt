@@ -122,18 +122,14 @@ object UpdateManager {
                 val apkFile = File(updatesDir, targetFileName)
 
                 // Never trust file size alone: old releases can have byte-identical sizes.
-                if (apkFile.exists() && isCachedApkValid(context, apkFile, info)) {
-                    if (!isCachedApkValid(context, apkFile, info)) {
-                        apkFile.delete()
-                        throw IllegalStateException("Downloaded APK failed version/hash verification")
+                if (apkFile.exists()) {
+                    if (isCachedApkValid(context, apkFile, info)) {
+                        withContext(Dispatchers.Main) {
+                            _state.value = UpdateState.ReadyToInstall(info, apkFile)
+                            installApk(context, apkFile)
+                        }
+                        return@launch
                     }
-
-                    withContext(Dispatchers.Main) {
-                        _state.value = UpdateState.ReadyToInstall(info, apkFile)
-                        installApk(context, apkFile)
-                    }
-                    return@launch
-                } else if (apkFile.exists()) {
                     apkFile.delete()
                 }
 
@@ -185,6 +181,11 @@ object UpdateManager {
                             }
                             output.flush()
                         }
+                    }
+
+                    if (!isCachedApkValid(context, apkFile, info)) {
+                        apkFile.delete()
+                        throw IllegalStateException("Downloaded APK failed version/hash/package verification")
                     }
 
                     withContext(Dispatchers.Main) {
