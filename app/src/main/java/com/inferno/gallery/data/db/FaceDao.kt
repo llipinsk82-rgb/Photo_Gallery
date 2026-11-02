@@ -266,19 +266,29 @@ interface FaceDao {
         WHERE isVideo = 0 
           AND bucketName != 'Trash' 
           AND uriString NOT IN (SELECT originalUri FROM vault_media)
-          AND id NOT IN (SELECT mediaId FROM media_face_status)
+          AND id NOT IN (
+              SELECT mediaId FROM media_face_status
+              WHERE faceCount >= 0 OR scannedAt > :retryCutoffMs
+          )
         ORDER BY dateAdded DESC
     """)
-    suspend fun getUnindexedMediaIds(): List<Long>
+    suspend fun getUnindexedMediaIds(
+        retryCutoffMs: Long = System.currentTimeMillis() - com.inferno.gallery.data.ai.FaceScanSafety.RETRY_DELAY_MS
+    ): List<Long>
 
     @Query("""
         SELECT COUNT(id) FROM core_media 
         WHERE isVideo = 0 
           AND bucketName != 'Trash' 
           AND uriString NOT IN (SELECT originalUri FROM vault_media)
-          AND id NOT IN (SELECT mediaId FROM media_face_status)
+          AND id NOT IN (
+              SELECT mediaId FROM media_face_status
+              WHERE faceCount >= 0 OR scannedAt > :retryCutoffMs
+          )
     """)
-    fun observeUnindexedCount(): Flow<Int>
+    fun observeUnindexedCount(
+        retryCutoffMs: Long = System.currentTimeMillis() - com.inferno.gallery.data.ai.FaceScanSafety.RETRY_DELAY_MS
+    ): Flow<Int>
 
     // ── Face Scan Status Operations ──
 
