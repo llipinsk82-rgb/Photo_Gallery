@@ -7,6 +7,7 @@ import com.inferno.gallery.data.db.FaceDao
 import com.inferno.gallery.data.db.FaceEntity
 import com.inferno.gallery.data.db.PersonEntity
 import com.inferno.gallery.data.db.PersonMergeExclusionEntity
+import com.inferno.gallery.data.db.PersonManualLockEntity
 import com.inferno.gallery.data.db.PersonMergeSuggestionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -468,6 +469,8 @@ class FaceClusteringManager(private val context: Context) {
                     personIdB = personB
                 )
             )
+            faceDao.lockPerson(PersonManualLockEntity(personId = sourcePersonId, reason = "manual_split"))
+            faceDao.lockPerson(PersonManualLockEntity(personId = newPersonId, reason = "manual_split"))
 
             faceDao.recalculateAllPersonFaceCounts()
 
@@ -569,6 +572,7 @@ class FaceClusteringManager(private val context: Context) {
             val excludedPairs = faceDao.getAllMergeExclusions()
                 .map { it.personIdA to it.personIdB }
                 .toHashSet()
+            val manualLocks = faceDao.getManualLockedPersonIds().toHashSet()
 
             var mergeCount = 0
             var changed = true
@@ -582,6 +586,7 @@ class FaceClusteringManager(private val context: Context) {
                     val c1 = clusterCache[i]
                     for (j in i + 1 until clusterCache.size) {
                         val c2 = clusterCache[j]
+                        if (c1.personId in manualLocks || c2.personId in manualLocks) continue
                         val pair = minOf(c1.personId, c2.personId) to maxOf(c1.personId, c2.personId)
                         if (pair in excludedPairs) continue
 
@@ -670,11 +675,13 @@ class FaceClusteringManager(private val context: Context) {
         val excludedPairs = faceDao.getAllMergeExclusions()
             .map { it.personIdA to it.personIdB }
             .toHashSet()
+        val manualLocks = faceDao.getManualLockedPersonIds().toHashSet()
 
         for (i in 0 until clusterCache.size) {
             val c1 = clusterCache[i]
             for (j in i + 1 until clusterCache.size) {
                 val c2 = clusterCache[j]
+                if (c1.personId in manualLocks || c2.personId in manualLocks) continue
                 val excludedPair = minOf(c1.personId, c2.personId) to maxOf(c1.personId, c2.personId)
                 if (excludedPair in excludedPairs) continue
 
