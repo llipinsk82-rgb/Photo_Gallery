@@ -2724,8 +2724,9 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     fun deleteSelectedMediaFromDb(uris: List<String>) {
         if (uris.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            database.mediaDao().deleteByUrisChunked(uris)
-            database.faceDao().deletePersonsWithoutFaces()
+            com.inferno.gallery.data.ai.FaceClusteringManager
+                .getInstance(getApplication())
+                .deleteMediaRowsAndCleanup(uris)
             withContext(Dispatchers.Main) {
                 _uiEvents.send(UiEvent.DeleteSuccess)
             }
