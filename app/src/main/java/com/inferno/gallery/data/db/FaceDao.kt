@@ -180,7 +180,15 @@ interface FaceDao {
     @Query("SELECT * FROM faces WHERE personId = :personId")
     suspend fun getFacesByPersonId(personId: Long): List<FaceEntity>
 
-    @Query("SELECT * FROM faces WHERE personId = :personId ORDER BY qualityScore DESC")
+    @Query("""
+        SELECT f.* FROM faces f
+        INNER JOIN core_media c ON f.mediaId = c.id
+        WHERE f.personId = :personId
+          AND c.bucketName != 'Trash'
+          AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+          AND c.filePath NOT IN (SELECT originalPath FROM vault_media)
+        ORDER BY f.qualityScore DESC
+    """)
     fun observeFacesByPersonId(personId: Long): Flow<List<FaceEntity>>
 
     @Query("SELECT * FROM faces WHERE personId = :personId AND isExemplar = 1 ORDER BY qualityScore DESC LIMIT 5")
