@@ -27,4 +27,16 @@ class AppBrandingResourceTest {
         assertTrue(themes.contains("windowSplashScreenAnimatedIcon\">@drawable/blackserv_launcher_raster"))
         assertFalse(themes.contains("windowSplashScreenAnimatedIcon\">@mipmap/ic_launcher"))
     }
+
+    @Test
+    fun splashBackgroundMatchesLightAndDarkAppThemes() {
+        val themes = source("res/values/themes.xml")
+        assertTrue(themes.contains("windowSplashScreenBackground\">@color/gallery_splash_background"))
+        assertFalse(themes.contains("windowSplashScreenBackground\">#000000"))
+
+        val light = source("res/values/colors.xml")
+        val dark = source("res/values-night/colors.xml")
+        assertTrue(light.contains("<color name=\\"gallery_splash_background\\">#F8F9FF</color>"))
+        assertTrue(dark.contains("<color name=\\"gallery_splash_background\\">#15181E</color>"))
+    }
 }
