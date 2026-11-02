@@ -488,6 +488,20 @@ object DatabaseProvider {
                     )
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_history_faces_mergeId ON person_merge_history_faces(mergeId)")
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_history_faces_faceId ON person_merge_history_faces(faceId)")
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS person_merge_exclusions (
+                            personIdA INTEGER NOT NULL,
+                            personIdB INTEGER NOT NULL,
+                            createdAt INTEGER NOT NULL,
+                            PRIMARY KEY(personIdA, personIdB),
+                            FOREIGN KEY(personIdA) REFERENCES persons(id) ON DELETE CASCADE,
+                            FOREIGN KEY(personIdB) REFERENCES persons(id) ON DELETE CASCADE
+                        )
+                        """.trimIndent()
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_exclusions_personIdA ON person_merge_exclusions(personIdA)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_exclusions_personIdB ON person_merge_exclusions(personIdB)")
                 }
             }
 
