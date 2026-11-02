@@ -2094,29 +2094,23 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
                                 val allEmbeddings = database.embeddingDao().getAllEmbeddings()
                                 if (allEmbeddings.isEmpty()) return@async emptyList()
 
-                                val minConfidence = 0.235f
-                                android.util.Log.i(
-                                    "GalleryViewModel",
-                                    "Smart search for: '$query'. Query vector sample: [${queryVector.take(3).joinToString(", ")}], Total DB embeddings: ${allEmbeddings.size}, MinConfidence: $minConfidence"
-                                )
-
                                 val scored = allEmbeddings.map { record ->
                                     record.mediaId to searchEngine.dotProduct(queryVector, record.embedding)
                                 }.sortedByDescending { it.second }
 
-                                val topScore = scored.firstOrNull()?.second ?: return@async emptyList()
-                                // Noise floor rejection: if top match is below minConfidence, concept is absent from gallery
-                                if (topScore < minConfidence) {
-                                    android.util.Log.d("GalleryViewModel", "Smart search: topScore $topScore < minConfidence $minConfidence, returning empty list")
+                                val matched = SemanticSearchPolicy.filterMatches(scored)
+                                if (matched.isEmpty()) {
+                                    val topScore = scored.firstOrNull()?.second
+                                    android.util.Log.d(
+                                        "GalleryViewModel",
+                                        "Smart search rejected as noise. query='$query', topScore=$topScore, minConfidence=${SemanticSearchPolicy.MIN_CONFIDENCE}"
+                                    )
                                     return@async emptyList()
                                 }
 
-                                val adaptiveThreshold = maxOf(minConfidence, topScore - 0.055f)
-                                val maxResults = 200
-                                val matched = scored.filter { it.second >= adaptiveThreshold }.take(maxResults)
                                 android.util.Log.i(
                                     "GalleryViewModel",
-                                    "Smart search: topScore $topScore, adaptiveThreshold $adaptiveThreshold, matches found: ${matched.size}"
+                                    "Smart search: query='$query', topScore=${matched.first().second}, thresholdPolicy=${SemanticSearchPolicy.MIN_CONFIDENCE}/${SemanticSearchPolicy.RELATIVE_MARGIN}, matches=${matched.size}"
                                 )
 
                                 if (matched.isNotEmpty()) {
@@ -2132,8 +2126,8 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
                                             val (exists, resolved) = resolveItemFields(uri, entity.filePath, entity.bucketName)
                                             val score = scoreMap[entity.id]
                                             val snippet = score?.let {
-                                                val pct = (((it - 0.235f) / (0.330f - 0.235f)) * 35f + 60f).coerceIn(60f, 99f).toInt()
-                                                "$pct% match"
+                                                val pct = SemanticSearchPolicy.displayConfidence(it)
+                                                "$pct% semantic"
                                             }
                                             GalleryItem(
                                                 id = entity.id.toString(),
