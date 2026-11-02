@@ -469,6 +469,7 @@ object DatabaseProvider {
                             targetNameBefore TEXT,
                             targetCoverCropPathBefore TEXT,
                             sourceExclusionPersonIds TEXT,
+                            sourceNestedMergeHistoryIds TEXT,
                             createdAt INTEGER NOT NULL,
                             FOREIGN KEY(targetPersonId) REFERENCES persons(id) ON DELETE CASCADE
                         )
