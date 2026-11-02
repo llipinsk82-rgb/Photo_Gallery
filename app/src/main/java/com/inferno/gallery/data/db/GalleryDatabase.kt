@@ -387,12 +387,16 @@ interface MediaDao {
         FaceEntity::class,
         MediaFaceStatusEntity::class,
         PersonMergeSuggestionEntity::class,
+        PersonMergeHistoryEntity::class,
+        PersonMergeHistoryFaceEntity::class,
+        PersonMergeExclusionEntity::class,
+        PersonManualLockEntity::class,
         DocumentClassificationEntity::class
         // ImageFtsEntity is intentionally excluded: @Fts5 has a KSP 2.2.x incompatibility.
         // The FTS5 virtual table is instead created manually in DatabaseProvider's
         // RoomDatabase.Callback onCreate hook using raw CREATE VIRTUAL TABLE SQL.
     ],
-    version = 29,
+    version = 30,
     exportSchema = true
 )
 @androidx.room.TypeConverters(EmbeddingConverter::class)

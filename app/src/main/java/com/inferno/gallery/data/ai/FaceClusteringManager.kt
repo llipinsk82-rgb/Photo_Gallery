@@ -6,6 +6,8 @@ import com.inferno.gallery.data.db.DatabaseProvider
 import com.inferno.gallery.data.db.FaceDao
 import com.inferno.gallery.data.db.FaceEntity
 import com.inferno.gallery.data.db.PersonEntity
+import com.inferno.gallery.data.db.PersonMergeExclusionEntity
+import com.inferno.gallery.data.db.PersonManualLockEntity
 import com.inferno.gallery.data.db.PersonMergeSuggestionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -66,7 +68,8 @@ class FaceClusteringManager(private val context: Context) {
         }
     }
 
-    private val faceDao: FaceDao = DatabaseProvider.getDatabase(context).faceDao()
+    private val database = DatabaseProvider.getDatabase(context)
+    private val faceDao: FaceDao = database.faceDao()
     private val mutex = Mutex()
 
     data class ClusterCacheItem(
@@ -283,9 +286,6 @@ class FaceClusteringManager(private val context: Context) {
             )
 
             val cover = target.coverCropPath ?: source.coverCropPath
-            if (target.name.isNullOrBlank() && !source.name.isNullOrBlank()) {
-                faceDao.setPersonName(targetPersonId, source.name)
-            }
             faceDao.mergePersons(
                 sourcePersonId = sourcePersonId,
                 targetPersonId = targetPersonId,
@@ -322,9 +322,6 @@ class FaceClusteringManager(private val context: Context) {
                 )
 
                 val cover = target.coverCropPath ?: source.coverCropPath
-                if (target.name.isNullOrBlank() && !source.name.isNullOrBlank()) {
-                    faceDao.setPersonName(targetPersonId, source.name)
-                }
 
                 faceDao.mergePersons(
                     sourcePersonId = sourceId,
@@ -407,6 +404,108 @@ class FaceClusteringManager(private val context: Context) {
         }
     }
 
+    /**
+     * Reverses the most recent manual merge into [targetPersonId].
+     */
+    suspend fun undoLatestMerge(targetPersonId: Long): Boolean = mutex.withLock {
+        withContext(Dispatchers.IO + NonCancellable) {
+            val history = faceDao.undoLatestMergeAssignments(targetPersonId)
+                ?: return@withContext false
+
+            recomputePersonAfterReassignment(history.sourcePersonId)
+            recomputePersonAfterReassignment(targetPersonId)
+            faceDao.recalculateAllPersonFaceCounts()
+
+            isCacheInitialized = false
+            ensureCacheLoaded()
+            Log.d(TAG, "Undid merge ${history.id}: restored person ${history.sourcePersonId} from $targetPersonId")
+            true
+        }
+    }
+
+    /**
+     * Splits specific detected faces out of one person into a new identity.
+     * This works at faceId level, so a photo containing multiple people is handled correctly.
+     */
+    suspend fun splitFacesToNewPerson(
+        sourcePersonId: Long,
+        faceIds: List<Long>,
+        name: String
+    ): Long? = mutex.withLock {
+        withContext(Dispatchers.IO + NonCancellable) {
+            val selectedIds = faceIds.distinct()
+            if (selectedIds.isEmpty()) return@withContext null
+
+            val sourceFaces = faceDao.getFacesByPersonId(sourcePersonId)
+            val selectedSet = selectedIds.toHashSet()
+            val selectedFaces = sourceFaces.filter { it.id in selectedSet }
+            if (selectedFaces.isEmpty()) return@withContext null
+
+            val trimmedName = name.trim().takeIf { it.isNotEmpty() }
+            val newPersonId = faceDao.insertPerson(
+                PersonEntity(
+                    name = trimmedName,
+                    coverCropPath = selectedFaces.firstNotNullOfOrNull { it.cropCachePath },
+                    isPromoted = true,
+                    faceCount = 0,
+                    centroid = computeCentroidFromFaces(selectedFaces),
+                    createdAt = System.currentTimeMillis()
+                )
+            )
+
+            faceDao.reassignFacesByIds(
+                faceIds = selectedFaces.map { it.id },
+                sourcePersonId = sourcePersonId,
+                targetPersonId = newPersonId
+            )
+
+            recomputePersonAfterReassignment(sourcePersonId)
+            recomputePersonAfterReassignment(newPersonId)
+
+            val personA = minOf(sourcePersonId, newPersonId)
+            val personB = maxOf(sourcePersonId, newPersonId)
+            faceDao.insertMergeExclusion(
+                PersonMergeExclusionEntity(
+                    personIdA = personA,
+                    personIdB = personB
+                )
+            )
+            faceDao.lockPerson(PersonManualLockEntity(personId = sourcePersonId, reason = "manual_split"))
+            faceDao.lockPerson(PersonManualLockEntity(personId = newPersonId, reason = "manual_split"))
+
+            faceDao.recalculateAllPersonFaceCounts()
+
+            isCacheInitialized = false
+            ensureCacheLoaded()
+            Log.d(TAG, "Split ${selectedFaces.size} faces from $sourcePersonId into new person $newPersonId")
+            newPersonId
+        }
+    }
+
+    private suspend fun recomputePersonAfterReassignment(personId: Long) {
+        val person = faceDao.getPersonById(personId) ?: return
+        val faces = faceDao.getFacesByPersonId(personId)
+        if (faces.isEmpty()) {
+            faceDao.deletePerson(personId)
+            return
+        }
+
+        val mediaCount = faceDao.countDistinctMediaForPerson(personId)
+        val centroid = computeCentroidFromFaces(faces) ?: person.centroid
+        val cover = person.coverCropPath
+            ?.takeIf { existing -> faces.any { it.cropCachePath == existing } }
+            ?: faces.firstNotNullOfOrNull { it.cropCachePath }
+
+        faceDao.updatePerson(
+            person.copy(
+                centroid = centroid,
+                faceCount = mediaCount,
+                coverCropPath = cover,
+                isPromoted = person.isPromoted || mediaCount >= 3
+            )
+        )
+    }
+
     private fun isZeroVector(vector: FloatArray): Boolean {
         var sum = 0.0
         for (v in vector) sum += v * v
@@ -464,6 +563,20 @@ class FaceClusteringManager(private val context: Context) {
     }
 
     /**
+     * Permanently removes media rows and synchronizes person cleanup with the clustering cache.
+     * Keeping this under the same mutex prevents indexing from reusing a just-deleted personId.
+     */
+    suspend fun deleteMediaRowsAndCleanup(uris: List<String>) = mutex.withLock {
+        withContext(Dispatchers.IO + NonCancellable) {
+            if (uris.isEmpty()) return@withContext
+            database.mediaDao().deleteByUrisChunked(uris)
+            faceDao.deletePersonsWithoutFaces()
+            isCacheInitialized = false
+            ensureCacheLoaded()
+        }
+    }
+
+    /**
      * Iteratively merges clusters of the same identity whose centroids or exemplars exceed similarity threshold.
      * Consolidates fragmented clusters formed due to lighting/angle/pose variations.
      */
@@ -471,6 +584,10 @@ class FaceClusteringManager(private val context: Context) {
         withContext(Dispatchers.IO + NonCancellable) {
             isCacheInitialized = false
             ensureCacheLoaded()
+            val excludedPairs = faceDao.getAllMergeExclusions()
+                .map { it.personIdA to it.personIdB }
+                .toHashSet()
+            val manualLocks = faceDao.getManualLockedPersonIds().toHashSet()
 
             var mergeCount = 0
             var changed = true
@@ -484,6 +601,9 @@ class FaceClusteringManager(private val context: Context) {
                     val c1 = clusterCache[i]
                     for (j in i + 1 until clusterCache.size) {
                         val c2 = clusterCache[j]
+                        if (c1.personId in manualLocks || c2.personId in manualLocks) continue
+                        val pair = minOf(c1.personId, c2.personId) to maxOf(c1.personId, c2.personId)
+                        if (pair in excludedPairs) continue
 
                         var maxSim = FaceRecognitionEngine.cosineSimilarity(c1.centroid, c2.centroid)
 
@@ -517,16 +637,13 @@ class FaceClusteringManager(private val context: Context) {
                     val targetPerson = faceDao.getPersonById(target.personId)
                     val sourcePerson = faceDao.getPersonById(source.personId)
 
-                    if (targetPerson?.name.isNullOrBlank() && !sourcePerson?.name.isNullOrBlank()) {
-                        faceDao.setPersonName(target.personId, sourcePerson?.name)
-                    }
-
                     faceDao.mergePersons(
                         sourcePersonId = source.personId,
                         targetPersonId = target.personId,
                         mergedCentroid = normalizedCentroid,
                         faceCount = totalCount,
-                        coverCropPath = target.coverCropPath ?: source.coverCropPath
+                        coverCropPath = target.coverCropPath ?: source.coverCropPath,
+                        recordHistory = false
                     )
 
                     for (ex in source.exemplars) {
@@ -539,6 +656,15 @@ class FaceClusteringManager(private val context: Context) {
                     target.isPromoted = true
 
                     clusterCache.remove(source)
+
+                    // mergePersons() may inherit separation rules from the absorbed source.
+                    // Refresh before the next loop iteration so they take effect immediately.
+                    excludedPairs.clear()
+                    excludedPairs.addAll(
+                        faceDao.getAllMergeExclusions()
+                            .map { it.personIdA to it.personIdB }
+                    )
+
                     mergeCount++
                     changed = true
                 }
@@ -561,11 +687,18 @@ class FaceClusteringManager(private val context: Context) {
     suspend fun computeAndSaveMergeSuggestions(): Int = withContext(Dispatchers.IO) {
         ensureCacheLoaded()
         val suggestions = mutableListOf<PersonMergeSuggestionEntity>()
+        val excludedPairs = faceDao.getAllMergeExclusions()
+            .map { it.personIdA to it.personIdB }
+            .toHashSet()
+        val manualLocks = faceDao.getManualLockedPersonIds().toHashSet()
 
         for (i in 0 until clusterCache.size) {
             val c1 = clusterCache[i]
             for (j in i + 1 until clusterCache.size) {
                 val c2 = clusterCache[j]
+                if (c1.personId in manualLocks || c2.personId in manualLocks) continue
+                val excludedPair = minOf(c1.personId, c2.personId) to maxOf(c1.personId, c2.personId)
+                if (excludedPair in excludedPairs) continue
 
                 var maxSim = FaceRecognitionEngine.cosineSimilarity(c1.centroid, c2.centroid)
                 for (e1 in c1.exemplars) {

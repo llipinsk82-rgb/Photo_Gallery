@@ -1,48 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <!-- Keep the artwork comfortably inside adaptive-icon safe zones. -->
-    <group
-        android:pivotX="54"
-        android:pivotY="54"
-        android:scaleX="0.84"
-        android:scaleY="0.84">
-
-        <!-- Soft neutral plate so the icon works on both light and dark launchers. -->
-        <path
-            android:fillColor="#F7F9FC"
-            android:pathData="M54,16a38,38 0,1 0,0.01 0z" />
-
-        <!-- Larger, more exposed color petals. -->
-        <path
-            android:fillColor="#FFCC3D"
-            android:pathData="M54,19a17,17 0,1 1,0,34a17,17 0,1 1,0,-34z" />
-        <path
-            android:fillColor="#55C878"
-            android:pathData="M71,43a16,16 0,1 1,0,32a16,16 0,1 1,0,-32z" />
-        <path
-            android:fillColor="#4D8DFF"
-            android:pathData="M22,45a17,17 0,1 1,0,34a17,17 0,1 1,0,-34z" />
-        <path
-            android:fillColor="#FF665E"
-            android:pathData="M24,24a16,16 0,1 1,0,32a16,16 0,1 1,0,-32z" />
-
-        <!-- Smaller central photo card so the color flower remains visible. -->
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M35,37h38c5,0 9,4 9,9v25c0,5 -4,9 -9,9h-38c-5,0 -9,-4 -9,-9v-25c0,-5 4,-9 9,-9z" />
-        <path
-            android:fillColor="#2F7DEB"
-            android:pathData="M39,43h30c4,0 7,3 7,7v16c0,4 -3,7 -7,7h-30c-4,0 -7,-3 -7,-7v-16c0,-4 3,-7 7,-7z" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M36,67l10,-10 7,7 6,-6 13,9z" />
-        <path
-            android:fillColor="#FFE36E"
-            android:pathData="M63,49a4.5,4.5 0,1 1,0,9a4.5,4.5 0,1 1,0,-9z" />
-    </group>
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/blackserv_launcher_raster"
+    android:gravity="fill"
+    android:filter="true" />

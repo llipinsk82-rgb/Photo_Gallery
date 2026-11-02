@@ -411,6 +411,50 @@ class PeopleViewModel(application: Application) : AndroidViewModel(application) 
         return faceDao.observeMediaForPerson(personId).flowOn(Dispatchers.IO)
     }
 
+    fun observeFacesForPerson(personId: Long): Flow<List<com.inferno.gallery.data.db.FaceEntity>> {
+        return faceDao.observeFacesByPersonId(personId).flowOn(Dispatchers.IO)
+    }
+
+    fun observeLatestMergeHistory(personId: Long): Flow<com.inferno.gallery.data.db.PersonMergeHistoryEntity?> {
+        return faceDao.observeLatestMergeHistoryForTarget(personId).flowOn(Dispatchers.IO)
+    }
+
+    fun undoLatestMerge(
+        targetPersonId: Long,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val success = withContext(Dispatchers.IO + NonCancellable) {
+                try {
+                    clusteringManager.undoLatestMerge(targetPersonId)
+                } catch (e: Exception) {
+                    Log.e("PeopleViewModel", "Failed to undo person merge: ${e.message}", e)
+                    false
+                }
+            }
+            onComplete?.invoke(success)
+        }
+    }
+
+    fun splitFacesToNewPerson(
+        sourcePersonId: Long,
+        faceIds: List<Long>,
+        name: String,
+        onComplete: ((Long?) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val newPersonId = withContext(Dispatchers.IO + NonCancellable) {
+                try {
+                    clusteringManager.splitFacesToNewPerson(sourcePersonId, faceIds, name)
+                } catch (e: Exception) {
+                    Log.e("PeopleViewModel", "Failed to split person: ${e.message}", e)
+                    null
+                }
+            }
+            onComplete?.invoke(newPersonId)
+        }
+    }
+
     fun observePerson(personId: Long): Flow<PersonEntity?> = flow {
         emit(faceDao.getPersonById(personId))
         faceDao.observeAllVisiblePersons().collect { list ->
