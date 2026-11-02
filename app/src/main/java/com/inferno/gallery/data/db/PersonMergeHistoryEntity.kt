@@ -100,8 +100,7 @@ data class PersonMergeExclusionEntity(
             childColumns = ["personId"],
             onDelete = ForeignKey.CASCADE
         )
-    ],
-    indices = [Index("personId")]
+    ]
 )
 data class PersonManualLockEntity(
     @PrimaryKey val personId: Long,
