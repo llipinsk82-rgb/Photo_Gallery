@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlinx.coroutines.runBlocking
 import java.io.IOException
 
 class VaultTransferSafetyTest {
@@ -55,4 +56,31 @@ class VaultTransferSafetyTest {
         )
         assertFalse(result)
     }
+    @Test
+    fun failedSuspendingDatabasePersistCannotDeleteOriginal() {
+        val calls = mutableListOf<String>()
+        assertThrows(IOException::class.java) {
+            runBlocking {
+                VaultTransferSafety.commitCopySuspending(
+                    verifiedCopy = { calls += "verify" },
+                    commitDestination = { calls += "db-insert"; false },
+                    discardSource = { calls += "delete-original"; true }
+                )
+            }
+        }
+        assertEquals(listOf("verify", "db-insert"), calls)
+    }
+
+    @Test
+    fun successfulSuspendingDatabasePersistPrecedesDeletion() = runBlocking {
+        val calls = mutableListOf<String>()
+        val result = VaultTransferSafety.commitCopySuspending(
+            verifiedCopy = { calls += "verify" },
+            commitDestination = { calls += "db-insert"; true },
+            discardSource = { calls += "delete-original"; true }
+        )
+        assertTrue(result)
+        assertEquals(listOf("verify", "db-insert", "delete-original"), calls)
+    }
+
 }
