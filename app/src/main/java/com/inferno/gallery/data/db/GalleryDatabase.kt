@@ -389,6 +389,7 @@ interface MediaDao {
         PersonMergeSuggestionEntity::class,
         PersonMergeHistoryEntity::class,
         PersonMergeHistoryFaceEntity::class,
+        PersonMergeExclusionEntity::class,
         DocumentClassificationEntity::class
         // ImageFtsEntity is intentionally excluded: @Fts5 has a KSP 2.2.x incompatibility.
         // The FTS5 virtual table is instead created manually in DatabaseProvider's
