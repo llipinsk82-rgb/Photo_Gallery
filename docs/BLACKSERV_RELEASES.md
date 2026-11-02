@@ -10,11 +10,19 @@ The Android package ID is eu.blackserv.gallery. Every release MUST use the
 same private signing key. Never upload .jks, key.properties, signing
 passwords, or an OAuth token to Git.
 
-Generate a single release keystore on a trusted, persistent computer, store an
-encrypted backup in a second location, and retain the passwords separately.
-For example:
+The ONE permanent RSA 3072-bit PKCS12 signing identity has already been
+generated and backed up in the PRIVATE repository:
 
-    keytool -genkeypair -v -keystore blackserv-gallery.jks -storetype PKCS12 -alias blackserv-release -keyalg RSA -keysize 3072 -validity 10000
+    llipinsk82-rgb/Secrets/blackserv-gallery/signing/blackserv-gallery.jks
+
+Its credentials are in the same private repository at:
+
+    llipinsk82-rgb/Secrets/blackserv-gallery/signing/credentials.env
+
+Do NOT generate another key for future builds. Keep the Secrets repository
+private and restrict its collaborators. Because the encrypted key and its
+password are backed up in the same private repository, anyone who can read
+that repository can sign APKs. Keep a second encrypted offline backup.
 
 Set the following GitHub Actions repository secrets (not repository variables):
 
