@@ -22,13 +22,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.photopicker.compose.EmbeddedPhotoPicker
+import androidx.photopicker.compose.EmbeddedPhotoPickerState
 import androidx.photopicker.compose.ExperimentalPhotoPickerComposeApi
 import androidx.photopicker.compose.rememberEmbeddedPhotoPickerState
 import kotlinx.coroutines.Dispatchers
@@ -39,26 +38,22 @@ import kotlinx.coroutines.withContext
 fun CloudPhotosScreen(contentPadding: PaddingValues) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val selected = remember { mutableStateListOf<Uri>() }
 
-    fun importUris(uris: List<Uri>) {
+    suspend fun importUris(uris: List<Uri>) {
         if (uris.isEmpty()) return
-        scope.launch {
-            val result = importCloudMedia(context, uris)
-            selected.clear()
-            val message = when {
-                result.failed == 0 -> "Imported ${result.imported} item(s)"
-                result.imported == 0 -> "Import failed"
-                else -> "Imported ${result.imported}; failed: ${result.failed}"
-            }
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        val result = importCloudMedia(context, uris)
+        val message = when {
+            result.failed == 0 -> "Imported ${result.imported} item(s)"
+            result.imported == 0 -> "Import failed"
+            else -> "Imported ${result.imported}; failed: ${result.failed}"
         }
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 
     val fallbackPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = 50)
     ) { uris ->
-        importUris(uris)
+        scope.launch { importUris(uris) }
     }
 
     val supportsEmbedded =
@@ -74,17 +69,7 @@ fun CloudPhotosScreen(contentPadding: PaddingValues) {
         if (supportsEmbedded) {
             EmbeddedCloudPicker(
                 modifier = Modifier.fillMaxSize(),
-                onSelected = { uris ->
-                    uris.forEach { uri ->
-                        if (uri !in selected) selected.add(uri)
-                    }
-                },
-                onDeselected = { uris ->
-                    selected.removeAll(uris.toSet())
-                },
-                onSelectionComplete = {
-                    importUris(selected.toList())
-                }
+                onDownload = ::importUris
             )
         } else {
             Column(
@@ -113,15 +98,23 @@ fun CloudPhotosScreen(contentPadding: PaddingValues) {
 @Composable
 private fun EmbeddedCloudPicker(
     modifier: Modifier,
-    onSelected: (List<Uri>) -> Unit,
-    onDeselected: (List<Uri>) -> Unit,
-    onSelectionComplete: () -> Unit
+    onDownload: suspend (List<Uri>) -> Unit
 ) {
-    val pickerState = rememberEmbeddedPhotoPickerState(
+    val scope = rememberCoroutineScope()
+    lateinit var pickerState: EmbeddedPhotoPickerState
+
+    pickerState = rememberEmbeddedPhotoPickerState(
         initialExpandedValue = true,
-        onUriPermissionGranted = onSelected,
-        onUriPermissionRevoked = onDeselected,
-        onSelectionComplete = onSelectionComplete
+        onSelectionComplete = {
+            val selectedUris = pickerState.selectedMedia.toList()
+            if (selectedUris.isNotEmpty()) {
+                scope.launch {
+                    onDownload(selectedUris)
+                    pickerState.deselectUris(selectedUris)
+                    pickerState.isExpanded = true
+                }
+            }
+        }
     )
 
     EmbeddedPhotoPicker(
@@ -168,9 +161,9 @@ private suspend fun importCloudMedia(
             }
 
             val relativePath = if (isVideo) {
-                Environment.DIRECTORY_MOVIES + "/Gallery"
+                Environment.DIRECTORY_MOVIES + "/Restored"
             } else {
-                Environment.DIRECTORY_PICTURES + "/Gallery"
+                Environment.DIRECTORY_PICTURES + "/Restored"
             }
 
             val values = ContentValues().apply {
