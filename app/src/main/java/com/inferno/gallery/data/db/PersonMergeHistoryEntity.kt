@@ -1,6 +1,7 @@
 package com.inferno.gallery.data.db
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -11,6 +12,14 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "person_merge_history",
+    foreignKeys = [
+        ForeignKey(
+            entity = PersonEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["targetPersonId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
     indices = [
         Index("targetPersonId"),
         Index("createdAt")
@@ -34,6 +43,20 @@ data class PersonMergeHistoryEntity(
 @Entity(
     tableName = "person_merge_history_faces",
     primaryKeys = ["mergeId", "faceId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = PersonMergeHistoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["mergeId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = FaceEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["faceId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
     indices = [Index("mergeId"), Index("faceId")]
 )
 data class PersonMergeHistoryFaceEntity(
