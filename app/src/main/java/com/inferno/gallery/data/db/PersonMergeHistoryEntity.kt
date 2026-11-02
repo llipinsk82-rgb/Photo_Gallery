@@ -63,3 +63,29 @@ data class PersonMergeHistoryFaceEntity(
     val mergeId: Long,
     val faceId: Long
 )
+
+
+@Entity(
+    tableName = "person_merge_exclusions",
+    primaryKeys = ["personIdA", "personIdB"],
+    foreignKeys = [
+        ForeignKey(
+            entity = PersonEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["personIdA"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = PersonEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["personIdB"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("personIdA"), Index("personIdB")]
+)
+data class PersonMergeExclusionEntity(
+    val personIdA: Long,
+    val personIdB: Long,
+    val createdAt: Long = System.currentTimeMillis()
+)
