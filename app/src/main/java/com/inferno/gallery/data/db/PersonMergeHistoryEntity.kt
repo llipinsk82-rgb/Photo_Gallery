@@ -38,6 +38,7 @@ data class PersonMergeHistoryEntity(
     val targetNameBefore: String?,
     val targetCoverCropPathBefore: String?,
     val sourceExclusionPersonIds: String? = null,
+    val sourceNestedMergeHistoryIds: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 
