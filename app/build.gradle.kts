@@ -16,8 +16,8 @@ android {
         applicationId = "eu.blackserv.gallery"
         minSdk = 31
         targetSdk = 37
-        versionCode = 13
-        versionName = "3.0.0-blackserv.2"
+        versionCode = 14
+        versionName = "3.0.0-blackserv.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
@@ -72,11 +72,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = if (hasReleaseKeystore) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // Never publish a debug-signed APK as a release.
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release") else null
         }
     }
 
@@ -92,6 +89,18 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+}
+
+// Builds may run without secrets for tests and debug APKs. A release build must
+// fail loudly, rather than accidentally publishing an unsigned/test-signed APK.
+tasks.configureEach {
+    if (name == "preReleaseBuild") {
+        doFirst {
+            check(rootProject.file("key.properties").isFile) {
+                "Release signing is required: provide the gitignored key.properties and a permanent keystore."
+            }
+        }
     }
 }
 
@@ -120,6 +129,9 @@ dependencies {
     // ── AndroidX Core ──
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    // Android 14 + SDK extension 15: Google Photos/cloud picker embedded in our tab.
+    // alpha02 supports the project's current compileSdk 37 / AGP 9.2.1.
+    implementation("androidx.photopicker:photopicker-compose:1.0.0-alpha02")
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     // ── Lifecycle ──

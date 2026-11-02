@@ -67,32 +67,35 @@ fun FloatingNavigationPill(
     onNavigateToPhotos: () -> Unit,
     onNavigateToAlbums: () -> Unit,
     onNavigateToSearch: () -> Unit,
+    onNavigateToCloud: () -> Unit,
     showVideosTab: Boolean = false,
     onNavigateToVideos: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val tabCount = if (showVideosTab) 4 else 3
+    val tabCount = if (showVideosTab) 5 else 4
     val selectedIndex = if (showVideosTab) {
         when {
             currentRoute == "photos" -> 0
             currentRoute == "videos" -> 1
             currentRoute?.startsWith("album") == true || currentRoute == "albums" -> 2
-            currentRoute == "search" -> 3
+            currentRoute == "cloud" -> 3
+            currentRoute == "search" -> 4
             else -> 0
         }
     } else {
         when {
             currentRoute == "photos" -> 0
             currentRoute?.startsWith("album") == true || currentRoute == "albums" -> 1
-            currentRoute == "search" -> 2
+            currentRoute == "cloud" -> 2
+            currentRoute == "search" -> 3
             else -> 0
         }
     }
 
     Surface(
         modifier = modifier
-            .fillMaxWidth(if (showVideosTab) 0.92f else 0.78f)
-            .widthIn(min = if (showVideosTab) 320.dp else 280.dp, max = if (showVideosTab) 364.dp else 320.dp)
+            .fillMaxWidth(0.95f)
+            .widthIn(min = 300.dp, max = 420.dp)
             .height(56.dp)
             .pointerInput(Unit) {},
         shape = ShapeFull,
@@ -173,9 +176,17 @@ fun FloatingNavigationPill(
                 )
 
                 SlidingPillTabItem(
+                    icon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_cloud), contentDescription = "Cloud photos", modifier = Modifier.size(22.dp)) },
+                    label = "Cloud",
+                    isSelected = if (showVideosTab) selectedIndex == 3 else selectedIndex == 2,
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToCloud
+                )
+
+                SlidingPillTabItem(
                     icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_ms_search), contentDescription = "Search", modifier = Modifier.size(22.dp)) },
                     label = "Search",
-                    isSelected = if (showVideosTab) selectedIndex == 3 else selectedIndex == 2,
+                    isSelected = if (showVideosTab) selectedIndex == 4 else selectedIndex == 3,
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToSearch
                 )
@@ -416,8 +427,9 @@ fun getTabRouteIndex(route: String?): Int {
     return when (route) {
         "photos" -> 0
         "albums", "album/{bucketName}" -> 1
-        "search" -> 2
-        "settings" -> 3
+        "cloud" -> 2
+        "search" -> 3
+        "settings" -> 4
         else -> 0
     }
 }

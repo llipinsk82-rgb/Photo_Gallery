@@ -444,7 +444,7 @@ fun MainAppLayout(
         return
     }
 
-    val isRootTab = currentRoute == "photos" || currentRoute == "videos" || currentRoute == "albums" || currentRoute == "search"
+    val isRootTab = currentRoute == "photos" || currentRoute == "videos" || currentRoute == "albums" || currentRoute == "search" || currentRoute == "cloud"
     val isCollapsibleTopBarActive = isRootTab && !isSelectionMode
 
     var topBarOffsetY by remember { mutableFloatStateOf(0f) }
@@ -551,7 +551,7 @@ fun MainAppLayout(
         }
     }
 
-    val isMainScreen = currentRoute == "photos" || currentRoute == "videos" || currentRoute == "albums" || currentRoute == "search" || currentRoute == null
+    val isMainScreen = currentRoute == "photos" || currentRoute == "videos" || currentRoute == "albums" || currentRoute == "search" || currentRoute == "cloud" || currentRoute == null
     val isAlbumScreen = currentRoute == "album/{bucketName}"
     val isSettingsScreen = currentRoute == "settings"
 
@@ -820,6 +820,7 @@ fun MainAppLayout(
                                     "photos" -> "Photos"
                                     "videos" -> "Videos"
                                     "albums" -> "Albums"
+                                    "cloud" -> "Cloud"
                                     "search" -> "Search"
                                     else -> "BlackServ Gallery"
                                 }
@@ -833,7 +834,7 @@ fun MainAppLayout(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     modifier = Modifier.padding(end = 6.dp)
                                 ) {
-                                    if (currentRoute != "photos" && currentRoute != "videos" && currentRoute != "search") {
+                                    if (currentRoute != "photos" && currentRoute != "videos" && currentRoute != "search" && currentRoute != "cloud") {
                                         ExpressiveFilledIconButton(
                                             onClick = { nestedNavController.navigate("search") },
                                             modifier = Modifier.size(40.dp),
@@ -1017,6 +1018,13 @@ fun MainAppLayout(
                                     launchSingleTop = true
                                     restoreState = true
                                 }
+                            },
+                            onNavigateToCloud = {
+                                nestedNavController.navigate("cloud") {
+                                    popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         )
                     }
@@ -1088,6 +1096,18 @@ fun MainAppLayout(
                                 }
                             )
                             DockItem(
+                                icon = { Icon(ImageVector.vectorResource(R.drawable.ic_ms_cloud), contentDescription = "Cloud", modifier = Modifier.size(24.dp)) },
+                                label = "Cloud",
+                                isSelected = currentRoute == "cloud",
+                                onClick = {
+                                    nestedNavController.navigate("cloud") {
+                                        popUpTo(nestedNavController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            )
+                            DockItem(
                                 icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_ms_search), contentDescription = "Search", modifier = Modifier.size(24.dp)) },
                                 label = "Search",
                                 isSelected = currentRoute == "search",
@@ -1132,6 +1152,9 @@ fun MainAppLayout(
             popEnterTransition = { getEnterTransition(initialState.destination.route, targetState.destination.route) },
             popExitTransition = { getExitTransition(initialState.destination.route, targetState.destination.route) }
         ) {
+            composable("cloud") {
+                CloudPhotosScreen(contentPadding = effectivePadding)
+            }
             composable("photos") {
                 GalleryScreen(
                     sharedTransitionScope = sharedTransitionScope,

@@ -70,8 +70,9 @@ object UpdateChecker {
                         var picked: JSONObject? = null
                         for (i in 0 until array.length()) {
                             val item = array.optJSONObject(i) ?: continue
-                            // Include regular releases and prereleases, skip only drafts
-                            if (!item.optBoolean("draft", false)) {
+                            // Release tags are verified; GitHub Releases are not branch-scoped.
+                            if (!item.optBoolean("draft", false) &&
+                                BlackServReleasePolicy.isBlackServTag(item.optString("tag_name", ""))) {
                                 picked = item
                                 break
                             }
@@ -79,7 +80,8 @@ object UpdateChecker {
                         picked
                     } else {
                         val obj = JSONObject(trimmed)
-                        if (!obj.optBoolean("draft", false)) obj else null
+                        if (!obj.optBoolean("draft", false) &&
+                            BlackServReleasePolicy.isBlackServTag(obj.optString("tag_name", ""))) obj else null
                     }
                 } catch (e: Exception) {
                     null
@@ -141,7 +143,7 @@ object UpdateChecker {
         for (i in 0 until assets.length()) {
             val asset = assets.optJSONObject(i) ?: continue
             val name = asset.optString("name", "").lowercase()
-            if (name.endsWith(".apk")) {
+            if (BlackServReleasePolicy.isBlackServApk(name)) {
                 apkList.add(asset)
             }
         }
