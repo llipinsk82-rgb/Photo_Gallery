@@ -512,7 +512,6 @@ object DatabaseProvider {
                         )
                         """.trimIndent()
                     )
-                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_person_manual_locks_personId ON person_manual_locks(personId)")
                 }
             }
 
