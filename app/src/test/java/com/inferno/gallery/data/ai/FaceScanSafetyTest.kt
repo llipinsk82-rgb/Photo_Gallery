@@ -3,6 +3,7 @@ package com.inferno.gallery.data.ai
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class FaceScanSafetyTest {
     @Test
@@ -40,4 +41,16 @@ class FaceScanSafetyTest {
         val invalid = NormalizedFaceBox(0.5f, 0.5f, 0.5f, 0.7f)
         assertFalse(FaceScanSafety.isAlreadyIndexed(invalid, listOf(old)))
     }
+    @Test
+    fun `upgrading v8 automatically rechecks only previously empty face scans`() {
+        val source = listOf(
+            File("src/main/java/com/inferno/gallery/GalleryApplication.kt"),
+            File("app/src/main/java/com/inferno/gallery/GalleryApplication.kt")
+        ).firstOrNull { it.isFile }?.readText()
+            ?: throw AssertionError("Missing GalleryApplication source")
+        assertTrue(source.contains("if (scanVersion < 3)"))
+        assertTrue(source.contains("clearZeroFaceStatuses()"))
+        assertTrue(source.contains("putInt(\"scan_version\", 3)"))
+    }
+
 }
