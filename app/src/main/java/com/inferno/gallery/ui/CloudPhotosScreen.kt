@@ -22,9 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -33,8 +31,6 @@ import androidx.photopicker.compose.EmbeddedPhotoPickerState
 import androidx.photopicker.compose.ExperimentalPhotoPickerComposeApi
 import androidx.photopicker.compose.rememberEmbeddedPhotoPickerState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -120,17 +116,6 @@ private fun EmbeddedCloudPicker(
             }
         }
     )
-
-    // Never restore a stale selection when the Cloud screen/session is reopened.
-    LaunchedEffect(pickerState) {
-        snapshotFlow { pickerState.isReadyToRunSession }
-            .filter { it }
-            .first()
-        val staleSelection = pickerState.selectedMedia.toList()
-        if (staleSelection.isNotEmpty()) {
-            pickerState.deselectUris(staleSelection)
-        }
-    }
 
     EmbeddedPhotoPicker(
         state = pickerState,
