@@ -452,6 +452,42 @@ object DatabaseProvider {
                 }
             }
 
+            val MIGRATION_29_30 = object : androidx.room.migration.Migration(29, 30) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS person_merge_history (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            sourcePersonId INTEGER NOT NULL,
+                            targetPersonId INTEGER NOT NULL,
+                            sourceName TEXT,
+                            sourceCoverCropPath TEXT,
+                            sourceIsHidden INTEGER NOT NULL,
+                            sourceIsFavorite INTEGER NOT NULL,
+                            sourceIsPromoted INTEGER NOT NULL,
+                            sourceCreatedAt INTEGER NOT NULL,
+                            targetNameBefore TEXT,
+                            targetCoverCropPathBefore TEXT,
+                            createdAt INTEGER NOT NULL
+                        )
+                        """.trimIndent()
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_history_targetPersonId ON person_merge_history(targetPersonId)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_history_createdAt ON person_merge_history(createdAt)")
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS person_merge_history_faces (
+                            mergeId INTEGER NOT NULL,
+                            faceId INTEGER NOT NULL,
+                            PRIMARY KEY(mergeId, faceId)
+                        )
+                        """.trimIndent()
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_history_faces_mergeId ON person_merge_history_faces(mergeId)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_history_faces_faceId ON person_merge_history_faces(faceId)")
+                }
+            }
+
             val instance = Room.databaseBuilder(
                 context.applicationContext,
                 GalleryDatabase::class.java,
@@ -464,7 +500,7 @@ object DatabaseProvider {
                 MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
                 MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_22_24,
                 MIGRATION_24_25, MIGRATION_23_25, MIGRATION_22_25, MIGRATION_25_26,
-                MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29
+                MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30
             )
             .fallbackToDestructiveMigrationOnDowngrade(true)
             .fallbackToDestructiveMigration(true)
