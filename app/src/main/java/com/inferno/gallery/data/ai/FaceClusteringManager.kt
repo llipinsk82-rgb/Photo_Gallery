@@ -68,7 +68,8 @@ class FaceClusteringManager(private val context: Context) {
         }
     }
 
-    private val faceDao: FaceDao = DatabaseProvider.getDatabase(context).faceDao()
+    private val database = DatabaseProvider.getDatabase(context)
+    private val faceDao: FaceDao = database.faceDao()
     private val mutex = Mutex()
 
     data class ClusterCacheItem(
@@ -559,6 +560,20 @@ class FaceClusteringManager(private val context: Context) {
 
     fun invalidateCache() {
         isCacheInitialized = false
+    }
+
+    /**
+     * Permanently removes media rows and synchronizes person cleanup with the clustering cache.
+     * Keeping this under the same mutex prevents indexing from reusing a just-deleted personId.
+     */
+    suspend fun deleteMediaRowsAndCleanup(uris: List<String>) = mutex.withLock {
+        withContext(Dispatchers.IO + NonCancellable) {
+            if (uris.isEmpty()) return@withContext
+            database.mediaDao().deleteByUrisChunked(uris)
+            faceDao.deletePersonsWithoutFaces()
+            isCacheInitialized = false
+            ensureCacheLoaded()
+        }
     }
 
     /**
