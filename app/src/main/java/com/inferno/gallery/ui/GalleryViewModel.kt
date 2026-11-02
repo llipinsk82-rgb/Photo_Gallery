@@ -2725,6 +2725,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         if (uris.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
             database.mediaDao().deleteByUrisChunked(uris)
+            database.faceDao().deletePersonsWithoutFaces()
             withContext(Dispatchers.Main) {
                 _uiEvents.send(UiEvent.DeleteSuccess)
             }
