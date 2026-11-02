@@ -6,6 +6,7 @@ import com.inferno.gallery.data.db.DatabaseProvider
 import com.inferno.gallery.data.db.FaceDao
 import com.inferno.gallery.data.db.FaceEntity
 import com.inferno.gallery.data.db.PersonEntity
+import com.inferno.gallery.data.db.PersonMergeExclusionEntity
 import com.inferno.gallery.data.db.PersonMergeSuggestionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
