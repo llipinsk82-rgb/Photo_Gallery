@@ -314,6 +314,9 @@ interface FaceDao {
     @Query("SELECT * FROM person_merge_exclusions")
     suspend fun getAllMergeExclusions(): List<PersonMergeExclusionEntity>
 
+    @Query("SELECT * FROM person_merge_exclusions WHERE personIdA = :personId OR personIdB = :personId")
+    suspend fun getMergeExclusionsForPerson(personId: Long): List<PersonMergeExclusionEntity>
+
     @Query("""
         SELECT COUNT(id) FROM core_media 
         WHERE isVideo = 0 
@@ -357,6 +360,8 @@ interface FaceDao {
             }
         }
 
+        val inheritedExclusions = getMergeExclusionsForPerson(sourcePersonId)
+
         deleteMergeSuggestionsForPerson(sourcePersonId)
         reassignFaces(sourcePersonId, targetPersonId)
         val distinctPhotoCount = countDistinctMediaForPerson(targetPersonId)
@@ -369,6 +374,24 @@ interface FaceDao {
             isPromoted = true
         )
         updatePerson(updated)
+
+        // Preserve manual-separation rules when this cluster is absorbed into another.
+        inheritedExclusions.forEach { exclusion ->
+            val otherPersonId = if (exclusion.personIdA == sourcePersonId) {
+                exclusion.personIdB
+            } else {
+                exclusion.personIdA
+            }
+            if (otherPersonId != targetPersonId && getPersonById(otherPersonId) != null) {
+                insertMergeExclusion(
+                    PersonMergeExclusionEntity(
+                        personIdA = minOf(targetPersonId, otherPersonId),
+                        personIdB = maxOf(targetPersonId, otherPersonId)
+                    )
+                )
+            }
+        }
+
         deletePerson(sourcePersonId)
     }
 
