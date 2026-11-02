@@ -203,14 +203,31 @@ class SmartSearchEngine(private val context: Context) {
             return encodeSingleText(trimmed)
         }
 
-        // Canonical CLIP multi-template prompt ensembling:
-        // Averages embeddings across multiple descriptive templates to maximize retrieval recall
-        val templates = listOf(
-            trimmed,
-            "a photo of $trimmed",
-            "a photo of the $trimmed",
-            "a close-up photo of $trimmed"
+        // CLIP prompt ensembling tuned for gallery retrieval.
+        // Avoid forcing "close-up" context: it produces false positives for broad scenes
+        // such as parks, beaches, rooms and streets.
+        val sceneWords = setOf(
+            "park", "beach", "forest", "street", "road", "room", "garden",
+            "mountain", "lake", "river", "city", "building", "house", "field"
         )
+        val words = trimmed.lowercase().split(Regex("\\s+")).toSet()
+        val isSceneQuery = words.any { it in sceneWords }
+
+        val templates = if (isSceneQuery) {
+            listOf(
+                trimmed,
+                "a photo of a $trimmed",
+                "a scene showing a $trimmed",
+                "a wide photo of a $trimmed"
+            )
+        } else {
+            listOf(
+                trimmed,
+                "a photo of $trimmed",
+                "a picture of $trimmed",
+                "an image containing $trimmed"
+            )
+        }
 
         val ensembled = FloatArray(512)
         for (tpl in templates) {
