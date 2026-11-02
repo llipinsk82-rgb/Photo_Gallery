@@ -36,7 +36,7 @@ class AppBrandingResourceTest {
 
         val light = source("res/values/colors.xml")
         val dark = source("res/values-night/colors.xml")
-        assertTrue(light.contains("<color name=\\"gallery_splash_background\\">#F8F9FF</color>"))
-        assertTrue(dark.contains("<color name=\\"gallery_splash_background\\">#15181E</color>"))
+        assertTrue(light.contains("""<color name="gallery_splash_background">#F8F9FF</color>"""))
+        assertTrue(dark.contains("""<color name="gallery_splash_background">#15181E</color>"""))
     }
 }
