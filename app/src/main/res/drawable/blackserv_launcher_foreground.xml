@@ -4,18 +4,45 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Neutral Gallery icon: unmistakable photo glyph with layered color accents. -->
-    <path android:fillColor="#F7F9FC" android:pathData="M54,16a38,38 0,1 0,0.01 0z" />
 
-    <!-- Offset color layers: recognizable as a collection, but not a Google Photos pinwheel. -->
-    <path android:fillColor="#FFCC3D" android:pathData="M56,22a15,15 0,1 1,0,30a15,15 0,1 1,0,-30z" />
-    <path android:fillColor="#55C878" android:pathData="M68,46a14,14 0,1 1,0,28a14,14 0,1 1,0,-28z" />
-    <path android:fillColor="#4D8DFF" android:pathData="M28,50a15,15 0,1 1,0,30a15,15 0,1 1,0,-30z" />
-    <path android:fillColor="#FF665E" android:pathData="M29,29a14,14 0,1 1,0,28a14,14 0,1 1,0,-28z" />
+    <!-- Keep the artwork comfortably inside adaptive-icon safe zones. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.84"
+        android:scaleY="0.84">
 
-    <!-- Central photo card. -->
-    <path android:fillColor="#FFFFFF" android:pathData="M32,34h44c5.5,0 10,4.5 10,10v29c0,5.5 -4.5,10 -10,10h-44c-5.5,0 -10,-4.5 -10,-10v-29c0,-5.5 4.5,-10 10,-10z" />
-    <path android:fillColor="#2F7DEB" android:pathData="M37,41h34c4.4,0 8,3.6 8,8v19c0,4.4 -3.6,8 -8,8h-34c-4.4,0 -8,-3.6 -8,-8v-19c0,-4.4 3.6,-8 8,-8z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M34,69l11,-12 8,8 7,-7 14,11z" />
-    <path android:fillColor="#FFE36E" android:pathData="M65,49a5,5 0,1 1,0,10a5,5 0,1 1,0,-10z" />
+        <!-- Soft neutral plate so the icon works on both light and dark launchers. -->
+        <path
+            android:fillColor="#F7F9FC"
+            android:pathData="M54,16a38,38 0,1 0,0.01 0z" />
+
+        <!-- Larger, more exposed color petals. -->
+        <path
+            android:fillColor="#FFCC3D"
+            android:pathData="M54,19a17,17 0,1 1,0,34a17,17 0,1 1,0,-34z" />
+        <path
+            android:fillColor="#55C878"
+            android:pathData="M71,43a16,16 0,1 1,0,32a16,16 0,1 1,0,-32z" />
+        <path
+            android:fillColor="#4D8DFF"
+            android:pathData="M22,45a17,17 0,1 1,0,34a17,17 0,1 1,0,-34z" />
+        <path
+            android:fillColor="#FF665E"
+            android:pathData="M24,24a16,16 0,1 1,0,32a16,16 0,1 1,0,-32z" />
+
+        <!-- Smaller central photo card so the color flower remains visible. -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M35,37h38c5,0 9,4 9,9v25c0,5 -4,9 -9,9h-38c-5,0 -9,-4 -9,-9v-25c0,-5 4,-9 9,-9z" />
+        <path
+            android:fillColor="#2F7DEB"
+            android:pathData="M39,43h30c4,0 7,3 7,7v16c0,4 -3,7 -7,7h-30c-4,0 -7,-3 -7,-7v-16c0,-4 3,-7 7,-7z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M36,67l10,-10 7,7 6,-6 13,9z" />
+        <path
+            android:fillColor="#FFE36E"
+            android:pathData="M63,49a4.5,4.5 0,1 1,0,9a4.5,4.5 0,1 1,0,-9z" />
+    </group>
 </vector>
