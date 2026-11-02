@@ -16,8 +16,8 @@ android {
         applicationId = "eu.blackserv.gallery"
         minSdk = 31
         targetSdk = 37
-        versionCode = 14
-        versionName = "3.0.0-blackserv.3"
+        versionCode = 15
+        versionName = "3.0.0-blackserv.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
