@@ -636,6 +636,15 @@ class FaceClusteringManager(private val context: Context) {
                     target.isPromoted = true
 
                     clusterCache.remove(source)
+
+                    // mergePersons() may inherit separation rules from the absorbed source.
+                    // Refresh before the next loop iteration so they take effect immediately.
+                    excludedPairs.clear()
+                    excludedPairs.addAll(
+                        faceDao.getAllMergeExclusions()
+                            .map { it.personIdA to it.personIdB }
+                    )
+
                     mergeCount++
                     changed = true
                 }
