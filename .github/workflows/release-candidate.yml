@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           for apk in app/build/outputs/apk/release/*.apk; do
             echo "Verifying $apk"
-            apksigner verify --verbose --print-certs "$apk"
+            $ANDROID_HOME/build-tools/37.0.0/apksigner verify --verbose --print-certs "$apk"
           done
 
       - name: Upload signed release candidate
