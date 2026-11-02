@@ -407,6 +407,96 @@ class FaceClusteringManager(private val context: Context) {
         }
     }
 
+    /**
+     * Reverses the most recent manual merge into [targetPersonId].
+     */
+    suspend fun undoLatestMerge(targetPersonId: Long): Boolean = mutex.withLock {
+        withContext(Dispatchers.IO + NonCancellable) {
+            val history = faceDao.undoLatestMergeAssignments(targetPersonId)
+                ?: return@withContext false
+
+            recomputePersonAfterReassignment(history.sourcePersonId)
+            recomputePersonAfterReassignment(targetPersonId)
+            faceDao.recalculateAllPersonFaceCounts()
+
+            isCacheInitialized = false
+            ensureCacheLoaded()
+            Log.d(TAG, "Undid merge ${history.id}: restored person ${history.sourcePersonId} from $targetPersonId")
+            true
+        }
+    }
+
+    /**
+     * Splits specific detected faces out of one person into a new identity.
+     * This works at faceId level, so a photo containing multiple people is handled correctly.
+     */
+    suspend fun splitFacesToNewPerson(
+        sourcePersonId: Long,
+        faceIds: List<Long>,
+        name: String
+    ): Long? = mutex.withLock {
+        withContext(Dispatchers.IO + NonCancellable) {
+            val selectedIds = faceIds.distinct()
+            if (selectedIds.isEmpty()) return@withContext null
+
+            val sourceFaces = faceDao.getFacesByPersonId(sourcePersonId)
+            val selectedSet = selectedIds.toHashSet()
+            val selectedFaces = sourceFaces.filter { it.id in selectedSet }
+            if (selectedFaces.isEmpty()) return@withContext null
+
+            val trimmedName = name.trim().takeIf { it.isNotEmpty() }
+            val newPersonId = faceDao.insertPerson(
+                PersonEntity(
+                    name = trimmedName,
+                    coverCropPath = selectedFaces.firstNotNullOfOrNull { it.cropCachePath },
+                    isPromoted = true,
+                    faceCount = 0,
+                    centroid = computeCentroidFromFaces(selectedFaces),
+                    createdAt = System.currentTimeMillis()
+                )
+            )
+
+            faceDao.reassignFacesByIds(
+                faceIds = selectedFaces.map { it.id },
+                sourcePersonId = sourcePersonId,
+                targetPersonId = newPersonId
+            )
+
+            recomputePersonAfterReassignment(sourcePersonId)
+            recomputePersonAfterReassignment(newPersonId)
+            faceDao.recalculateAllPersonFaceCounts()
+
+            isCacheInitialized = false
+            ensureCacheLoaded()
+            Log.d(TAG, "Split ${selectedFaces.size} faces from $sourcePersonId into new person $newPersonId")
+            newPersonId
+        }
+    }
+
+    private suspend fun recomputePersonAfterReassignment(personId: Long) {
+        val person = faceDao.getPersonById(personId) ?: return
+        val faces = faceDao.getFacesByPersonId(personId)
+        if (faces.isEmpty()) {
+            faceDao.deletePerson(personId)
+            return
+        }
+
+        val mediaCount = faceDao.countDistinctMediaForPerson(personId)
+        val centroid = computeCentroidFromFaces(faces) ?: person.centroid
+        val cover = person.coverCropPath
+            ?.takeIf { existing -> faces.any { it.cropCachePath == existing } }
+            ?: faces.firstNotNullOfOrNull { it.cropCachePath }
+
+        faceDao.updatePerson(
+            person.copy(
+                centroid = centroid,
+                faceCount = mediaCount,
+                coverCropPath = cover,
+                isPromoted = person.isPromoted || mediaCount >= 3
+            )
+        )
+    }
+
     private fun isZeroVector(vector: FloatArray): Boolean {
         var sum = 0.0
         for (v in vector) sum += v * v
@@ -526,7 +616,8 @@ class FaceClusteringManager(private val context: Context) {
                         targetPersonId = target.personId,
                         mergedCentroid = normalizedCentroid,
                         faceCount = totalCount,
-                        coverCropPath = target.coverCropPath ?: source.coverCropPath
+                        coverCropPath = target.coverCropPath ?: source.coverCropPath,
+                        recordHistory = false
                     )
 
                     for (ex in source.exemplars) {
