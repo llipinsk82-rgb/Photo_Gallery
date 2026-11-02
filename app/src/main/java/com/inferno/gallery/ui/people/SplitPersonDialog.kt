@@ -88,9 +88,17 @@ fun SplitPersonDialog(
                 )
 
                 Text(
-                    text = "${selectedFaceIds.size} selected",
+                    text = if (selectedFaceIds.size == faces.size && faces.isNotEmpty()) {
+                        "Leave at least one face in the current person"
+                    } else {
+                        "${selectedFaceIds.size} selected"
+                    },
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = if (selectedFaceIds.size == faces.size && faces.isNotEmpty()) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
                 )
 
                 LazyVerticalGrid(
@@ -182,7 +190,9 @@ fun SplitPersonDialog(
                     }
                     Button(
                         onClick = { onConfirm(name.trim(), selectedFaceIds.toList()) },
-                        enabled = name.isNotBlank() && selectedFaceIds.isNotEmpty()
+                        enabled = name.isNotBlank() &&
+                            selectedFaceIds.isNotEmpty() &&
+                            selectedFaceIds.size < faces.size
                     ) {
                         Text("Create person")
                     }
