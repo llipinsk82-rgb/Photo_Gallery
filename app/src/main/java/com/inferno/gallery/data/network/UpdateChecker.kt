@@ -19,7 +19,8 @@ data class UpdateInfo(
     val downloadUrl: String?,
     val apkFileName: String?,
     val apkSizeBytes: Long,
-    val releasePageUrl: String
+    val releasePageUrl: String,
+    val apkSha256: String? = null
 )
 
 object UpdateChecker {
@@ -119,6 +120,10 @@ object UpdateChecker {
                 val downloadUrl = selectedAsset?.optString("browser_download_url")?.takeIf { it.isNotBlank() }
                 val apkFileName = selectedAsset?.optString("name")
                 val apkSizeBytes = selectedAsset?.optLong("size", 0L) ?: 0L
+                val apkSha256 = selectedAsset
+                    ?.optString("digest")
+                    ?.removePrefix("sha256:")
+                    ?.takeIf { it.matches(Regex("[0-9a-fA-F]{64}")) }
 
                 UpdateInfo(
                     isAvailable = isAvailable,
@@ -129,7 +134,8 @@ object UpdateChecker {
                     downloadUrl = downloadUrl,
                     apkFileName = apkFileName,
                     apkSizeBytes = apkSizeBytes,
-                    releasePageUrl = htmlUrl
+                    releasePageUrl = htmlUrl,
+                    apkSha256 = apkSha256
                 )
             }
         } catch (e: Exception) {

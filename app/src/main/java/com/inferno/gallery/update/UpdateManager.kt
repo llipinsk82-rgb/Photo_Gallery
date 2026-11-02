@@ -20,6 +20,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 sealed class UpdateState {
@@ -113,17 +114,29 @@ object UpdateManager {
         downloadJob = scope.launch(Dispatchers.IO) {
             try {
                 val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
-                val targetFileName = info.apkFileName ?: "BlackServGallery-${info.latestVersion}.apk"
+                val safeVersion = info.latestVersion
+                    .removePrefix("v")
+                    .replace(Regex("[^A-Za-z0-9._-]"), "_")
+                val assetName = info.apkFileName ?: "BlackServGallery.apk"
+                val targetFileName = "${safeVersion}-${assetName}"
                 val apkFile = File(updatesDir, targetFileName)
 
-                // If already downloaded and valid, skip download
-                if (apkFile.exists() && info.apkSizeBytes > 0 && apkFile.length() == info.apkSizeBytes) {
-                    withContext(Dispatchers.Main) {
-                        _state.value = UpdateState.ReadyToInstall(info, apkFile)
-                        installApk(context, apkFile)
+                // Never trust file size alone: old releases can have byte-identical sizes.
+                if (apkFile.exists()) {
+                    if (isCachedApkValid(context, apkFile, info)) {
+                        withContext(Dispatchers.Main) {
+                            _state.value = UpdateState.ReadyToInstall(info, apkFile)
+                            installApk(context, apkFile)
+                        }
+                        return@launch
                     }
-                    return@launch
+                    apkFile.delete()
                 }
+
+                // Drop stale update APKs so a previous version can never be reused accidentally.
+                updatesDir.listFiles()
+                    ?.filter { it.isFile && it.extension.equals("apk", ignoreCase = true) && it != apkFile }
+                    ?.forEach { it.delete() }
 
                 _state.value = UpdateState.Downloading(info, 0f, 0L, info.apkSizeBytes)
 
@@ -170,6 +183,11 @@ object UpdateManager {
                         }
                     }
 
+                    if (!isCachedApkValid(context, apkFile, info)) {
+                        apkFile.delete()
+                        throw IllegalStateException("Downloaded APK failed version/hash/package verification")
+                    }
+
                     withContext(Dispatchers.Main) {
                         _state.value = UpdateState.ReadyToInstall(info, apkFile)
                         installApk(context, apkFile)
@@ -182,6 +200,36 @@ object UpdateManager {
                 }
             }
         }
+    }
+
+
+    private fun isCachedApkValid(context: Context, apkFile: File, info: UpdateInfo): Boolean {
+        if (!apkFile.exists()) return false
+        if (info.apkSizeBytes > 0 && apkFile.length() != info.apkSizeBytes) return false
+
+        info.apkSha256?.let { expected ->
+            if (!sha256(apkFile).equals(expected, ignoreCase = true)) return false
+        }
+
+        val archiveInfo = context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, 0)
+            ?: return false
+        val expectedVersion = info.latestVersion.removePrefix("v")
+        if (archiveInfo.versionName != expectedVersion) return false
+        if (archiveInfo.packageName != context.packageName) return false
+
+        return true
+    }
+
+    private fun sha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            var read: Int
+            while (input.read(buffer).also { read = it } != -1) {
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
     fun installApk(context: Context, apkFile: File) {

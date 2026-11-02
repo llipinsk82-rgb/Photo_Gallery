@@ -109,6 +109,18 @@ jobs:
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose --print-certs "$apk"
           done
 
+      - name: Version release asset filenames
+        if: steps.existing.outputs.exists != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          for apk in app/build/outputs/apk/release/BlackServGallery-*.apk; do
+            base="$(basename "$apk")"
+            abi="${base#BlackServGallery-}"
+            mv "$apk" "app/build/outputs/apk/release/BlackServGallery-${VERSION}-${abi}"
+          done
+
       - name: Publish GitHub Release
         if: steps.existing.outputs.exists != 'true'
         env:
