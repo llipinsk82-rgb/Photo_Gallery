@@ -89,3 +89,22 @@ data class PersonMergeExclusionEntity(
     val personIdB: Long,
     val createdAt: Long = System.currentTimeMillis()
 )
+
+
+@Entity(
+    tableName = "person_manual_locks",
+    foreignKeys = [
+        ForeignKey(
+            entity = PersonEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["personId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("personId")]
+)
+data class PersonManualLockEntity(
+    @PrimaryKey val personId: Long,
+    val reason: String,
+    val createdAt: Long = System.currentTimeMillis()
+)
