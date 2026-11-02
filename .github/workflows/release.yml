@@ -1,0 +1,119 @@
+name: Release Build
+
+on:
+  push:
+    branches:
+      - 'source/blackserv-gallery'
+    paths:
+      - 'app/build.gradle.kts'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Publish BlackServ Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n1)"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-blackserv\.[0-9]+$ ]]; then
+            echo "Unsupported BlackServ versionName: $VERSION" >&2
+            exit 1
+          fi
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Resolved release: $TAG"
+
+      - name: Check whether release already exists
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$TAG already exists; nothing to publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        if: steps.existing.outputs.exists != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        if: steps.existing.outputs.exists != 'true'
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      - name: Install Android 37 SDK
+        if: steps.existing.outputs.exists != 'true'
+        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
+
+      - name: Setup Gradle
+        if: steps.existing.outputs.exists != 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        if: steps.existing.outputs.exists != 'true'
+        run: chmod +x gradlew
+
+      - name: Configure permanent BlackServ signing
+        if: steps.existing.outputs.exists != 'true'
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$RELEASE_KEYSTORE_BASE64"
+          test -n "$KEYSTORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > blackserv-gallery.jks
+          {
+            echo "storeFile=blackserv-gallery.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > key.properties
+
+      - name: Build signed release APKs
+        if: steps.existing.outputs.exists != 'true'
+        run: ./gradlew :app:assembleRelease --console=plain
+
+      - name: Verify APK signatures
+        if: steps.existing.outputs.exists != 'true'
+        run: |
+          set -euo pipefail
+          for apk in app/build/outputs/apk/release/*.apk; do
+            echo "Verifying $apk"
+            "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose --print-certs "$apk"
+          done
+
+      - name: Publish GitHub Release
+        if: steps.existing.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG"             app/build/outputs/apk/release/*.apk             --target "$GITHUB_SHA"             --title "$TAG"             --generate-notes

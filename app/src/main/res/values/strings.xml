@@ -1,6 +1,6 @@
 <resources>
     <!-- Application Brand -->
-    <string name="app_name">BlackServ Gallery</string>
+    <string name="app_name">Gallery</string>
     <string name="app_description">An open-source, offline Android gallery designed around privacy, performance, and stunning visuals.</string>
 
     <!-- Navigation & Tabs -->
