@@ -94,6 +94,8 @@ fun PersonDetailScreen(
     val coroutineScope = rememberCoroutineScope()
     val person by viewModel.observePerson(personId).collectAsState(initial = null)
     val mediaList by viewModel.observeMediaForPerson(personId).collectAsState(initial = emptyList())
+    val faceList by viewModel.observeFacesForPerson(personId).collectAsState(initial = emptyList())
+    val latestMergeHistory by viewModel.observeLatestMergeHistory(personId).collectAsState(initial = null)
     val allPeople by viewModel.allPersons.collectAsState()
     val haptic = LocalHapticFeedback.current
 
@@ -105,6 +107,9 @@ fun PersonDetailScreen(
     var showMergePicker by remember { mutableStateOf(false) }
     var showFeaturePhotoPicker by remember { mutableStateOf(false) }
     var showMovePhotosPicker by remember { mutableStateOf(false) }
+    var showSplitPersonDialog by remember { mutableStateOf(false) }
+    var showUndoMergeDialog by remember { mutableStateOf(false) }
+    var isPeopleOperation by remember { mutableStateOf(false) }
     var mergeCandidate by remember { mutableStateOf<PersonEntity?>(null) }
     var collisionTarget by remember { mutableStateOf<PersonEntity?>(null) }
     var isMerging by remember { mutableStateOf(false) }
@@ -138,6 +143,75 @@ fun PersonDetailScreen(
                 }
             }
         )
+    }
+
+    if (showSplitPersonDialog) {
+        SplitPersonDialog(
+            faces = faceList,
+            onDismissRequest = { if (!isPeopleOperation) showSplitPersonDialog = false },
+            onConfirm = { name, faceIds ->
+                showSplitPersonDialog = false
+                isPeopleOperation = true
+                viewModel.splitFacesToNewPerson(personId, faceIds, name) { newPersonId ->
+                    isPeopleOperation = false
+                    if (newPersonId != null) {
+                        Toast.makeText(context, "Created $name from ${faceIds.size} face(s)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to split person", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        )
+    }
+
+    val mergeHistory = latestMergeHistory
+    if (showUndoMergeDialog && mergeHistory != null) {
+        UndoMergeDialog(
+            sourceName = mergeHistory.sourceName,
+            onDismissRequest = { if (!isPeopleOperation) showUndoMergeDialog = false },
+            onConfirm = {
+                showUndoMergeDialog = false
+                isPeopleOperation = true
+                viewModel.undoLatestMerge(personId) { success ->
+                    isPeopleOperation = false
+                    Toast.makeText(
+                        context,
+                        if (success) "Merge undone" else "Could not undo merge",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        )
+    }
+
+    if (isPeopleOperation) {
+        Dialog(
+            onDismissRequest = { },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        ) {
+            Surface(
+                shape = ShapeLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.padding(SpacingTokens.L)
+            ) {
+                Row(
+                    modifier = Modifier.padding(SpacingTokens.XL),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(SpacingTokens.L)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(32.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 3.dp
+                    )
+                    Text(
+                        text = "Updating people...",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
     }
 
     if (isMerging) {
@@ -428,6 +502,51 @@ fun PersonDetailScreen(
                                             showMergePicker = true
                                         }
                                     )
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "Split person",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = ImageVector.vectorResource(R.drawable.ic_ms_drive_file_move),
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(IconSizeTokens.M)
+                                            )
+                                        },
+                                        enabled = faceList.size > 1,
+                                        onClick = {
+                                            showMenu = false
+                                            showSplitPersonDialog = true
+                                        }
+                                    )
+
+                                    if (latestMergeHistory != null) {
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = "Undo last merge",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = ImageVector.vectorResource(R.drawable.ic_ms_undo),
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(IconSizeTokens.M)
+                                                )
+                                            },
+                                            onClick = {
+                                                showMenu = false
+                                                showUndoMergeDialog = true
+                                            }
+                                        )
+                                    }
 
                                     DropdownMenuItem(
                                         text = {
