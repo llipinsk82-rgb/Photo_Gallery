@@ -76,9 +76,11 @@ class GalleryApplication : Application(), SingletonImageLoader.Factory, androidx
                 val db = DatabaseProvider.getDatabase(this@GalleryApplication)
                 val prefs = getSharedPreferences("face_scan_meta", android.content.Context.MODE_PRIVATE)
                 val scanVersion = prefs.getInt("scan_version", 1)
-                if (scanVersion < 2) {
+                if (scanVersion < 3) {
+                    // V9: recheck v8 photos recorded with zero faces (including silent scan failures).
+                    // Leave positive statuses and their named-person face records intact.
                     db.faceDao().clearZeroFaceStatuses()
-                    prefs.edit().putInt("scan_version", 2).apply()
+                    prefs.edit().putInt("scan_version", 3).apply()
                 }
 
                 val unindexedFaces = db.faceDao().getUnindexedMediaIds().isNotEmpty()
