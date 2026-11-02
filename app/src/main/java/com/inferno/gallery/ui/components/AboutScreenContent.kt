@@ -112,7 +112,7 @@ fun AboutScreenContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.blackserv_launcher_foreground),
+                        painter = painterResource(id = R.drawable.blackserv_launcher_raster),
                         contentDescription = "BlackServ Gallery logo",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.size(76.dp)
