@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -189,4 +190,36 @@ fun SplitPersonDialog(
             }
         }
     }
+}
+
+
+@Composable
+fun UndoMergeDialog(
+    sourceName: String?,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("Undo last merge?") },
+        text = {
+            Text(
+                if (sourceName.isNullOrBlank()) {
+                    "The most recently merged person will be restored with the exact detected faces saved before the merge."
+                } else {
+                    "$sourceName will be restored with the exact detected faces saved before the merge."
+                }
+            )
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Undo merge")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Cancel")
+            }
+        }
+    )
 }
