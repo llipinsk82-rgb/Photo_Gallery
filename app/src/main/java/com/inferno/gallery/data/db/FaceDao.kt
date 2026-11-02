@@ -342,6 +342,12 @@ interface FaceDao {
     @Query("SELECT * FROM person_merge_exclusions WHERE personIdA = :personId OR personIdB = :personId")
     suspend fun getMergeExclusionsForPerson(personId: Long): List<PersonMergeExclusionEntity>
 
+    @Query("DELETE FROM person_merge_exclusions WHERE personIdA = :personIdA AND personIdB = :personIdB")
+    suspend fun deleteMergeExclusion(personIdA: Long, personIdB: Long)
+
+    @Query("UPDATE person_merge_history SET targetPersonId = :newTargetPersonId WHERE targetPersonId = :oldTargetPersonId")
+    suspend fun transferMergeHistoryTarget(oldTargetPersonId: Long, newTargetPersonId: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun lockPerson(identityLock: PersonManualLockEntity)
 
@@ -368,6 +374,12 @@ interface FaceDao {
         val source = getPersonById(sourcePersonId) ?: return
         val target = getPersonById(targetPersonId) ?: return
 
+        val inheritedExclusions = getMergeExclusionsForPerson(sourcePersonId)
+        val sourceExclusionPersonIds = inheritedExclusions.mapNotNull { exclusion ->
+            val other = if (exclusion.personIdA == sourcePersonId) exclusion.personIdB else exclusion.personIdA
+            other.takeIf { it != targetPersonId }
+        }.distinct().sorted()
+
         if (recordHistory) {
             val faceIds = getFaceIdsByPersonId(sourcePersonId)
             if (faceIds.isNotEmpty()) {
@@ -382,7 +394,10 @@ interface FaceDao {
                         sourceIsPromoted = source.isPromoted,
                         sourceCreatedAt = source.createdAt,
                         targetNameBefore = target.name,
-                        targetCoverCropPathBefore = target.coverCropPath
+                        targetCoverCropPathBefore = target.coverCropPath,
+                        sourceExclusionPersonIds = sourceExclusionPersonIds
+                            .takeIf { it.isNotEmpty() }
+                            ?.joinToString(",")
                     )
                 )
                 insertMergeHistoryFaces(faceIds.map { faceId ->
@@ -390,8 +405,6 @@ interface FaceDao {
                 })
             }
         }
-
-        val inheritedExclusions = getMergeExclusionsForPerson(sourcePersonId)
 
         deleteMergeSuggestionsForPerson(sourcePersonId)
         reassignFaces(sourcePersonId, targetPersonId)
@@ -426,6 +439,12 @@ interface FaceDao {
         if (recordHistory) {
             lockPerson(PersonManualLockEntity(personId = targetPersonId, reason = "manual_merge"))
         }
+
+        // If this source already carries older undo history, keep it reachable after absorption.
+        transferMergeHistoryTarget(
+            oldTargetPersonId = sourcePersonId,
+            newTargetPersonId = targetPersonId
+        )
 
         deletePerson(sourcePersonId)
     }
@@ -471,6 +490,27 @@ interface FaceDao {
                 personIdB = personB
             )
         )
+
+        history.sourceExclusionPersonIds
+            ?.split(",")
+            ?.mapNotNull { it.toLongOrNull() }
+            ?.distinct()
+            ?.forEach { otherPersonId ->
+                if (getPersonById(otherPersonId) != null) {
+                    val restoredA = minOf(history.sourcePersonId, otherPersonId)
+                    val restoredB = maxOf(history.sourcePersonId, otherPersonId)
+                    insertMergeExclusion(
+                        PersonMergeExclusionEntity(
+                            personIdA = restoredA,
+                            personIdB = restoredB
+                        )
+                    )
+
+                    val inheritedA = minOf(targetPersonId, otherPersonId)
+                    val inheritedB = maxOf(targetPersonId, otherPersonId)
+                    deleteMergeExclusion(inheritedA, inheritedB)
+                }
+            }
 
         lockPerson(PersonManualLockEntity(personId = history.sourcePersonId, reason = "undo_merge"))
         lockPerson(PersonManualLockEntity(personId = targetPersonId, reason = "undo_merge"))
