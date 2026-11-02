@@ -10,7 +10,10 @@ class BPETokenizerTest {
         val file = listOf(
             File("models/tokenizer.json"),
             File("../models/tokenizer.json"),
-            File("app/models/tokenizer.json")
+            File("app/models/tokenizer.json"),
+            // CI checks out only tracked application assets, not local model caches.
+            File("src/main/assets/tokenizer.json"),
+            File("app/src/main/assets/tokenizer.json")
         ).firstOrNull { it.exists() } ?: throw IllegalStateException("tokenizer.json not found in search paths")
         return BPETokenizer(file.readText())
     }
