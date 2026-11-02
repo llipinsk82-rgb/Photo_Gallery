@@ -502,6 +502,17 @@ object DatabaseProvider {
                     )
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_exclusions_personIdA ON person_merge_exclusions(personIdA)")
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_person_merge_exclusions_personIdB ON person_merge_exclusions(personIdB)")
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS person_manual_locks (
+                            personId INTEGER PRIMARY KEY NOT NULL,
+                            reason TEXT NOT NULL,
+                            createdAt INTEGER NOT NULL,
+                            FOREIGN KEY(personId) REFERENCES persons(id) ON DELETE CASCADE
+                        )
+                        """.trimIndent()
+                    )
+                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_person_manual_locks_personId ON person_manual_locks(personId)")
                 }
             }
 
