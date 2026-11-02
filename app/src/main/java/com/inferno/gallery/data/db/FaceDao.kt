@@ -325,6 +325,12 @@ interface FaceDao {
     @Query("SELECT * FROM person_merge_exclusions WHERE personIdA = :personId OR personIdB = :personId")
     suspend fun getMergeExclusionsForPerson(personId: Long): List<PersonMergeExclusionEntity>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun lockPerson(identityLock: PersonManualLockEntity)
+
+    @Query("SELECT personId FROM person_manual_locks")
+    suspend fun getManualLockedPersonIds(): List<Long>
+
     @Query("""
         SELECT COUNT(id) FROM core_media 
         WHERE isVideo = 0 
@@ -400,6 +406,10 @@ interface FaceDao {
             }
         }
 
+        if (recordHistory) {
+            lockPerson(PersonManualLockEntity(personId = targetPersonId, reason = "manual_merge"))
+        }
+
         deletePerson(sourcePersonId)
     }
 
@@ -444,6 +454,9 @@ interface FaceDao {
                 personIdB = personB
             )
         )
+
+        lockPerson(PersonManualLockEntity(personId = history.sourcePersonId, reason = "undo_merge"))
+        lockPerson(PersonManualLockEntity(personId = targetPersonId, reason = "undo_merge"))
 
         // Only roll back metadata that the merge itself could have inherited.
         var restoredTarget = target
