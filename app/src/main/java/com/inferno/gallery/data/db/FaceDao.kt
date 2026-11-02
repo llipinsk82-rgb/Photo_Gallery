@@ -41,6 +41,13 @@ interface FaceDao {
                   AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isPromoted = 1 AND p.isHidden = 0
+          AND EXISTS (
+              SELECT 1 FROM faces f
+              INNER JOIN core_media c ON f.mediaId = c.id
+              WHERE f.personId = p.id AND c.bucketName != 'Trash'
+                AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                AND c.filePath NOT IN (SELECT originalPath FROM vault_media)
+          )
         ORDER BY p.isFavorite DESC, faceCount DESC
     """)
     fun observePromotedPersons(): Flow<List<PersonEntity>>
@@ -53,6 +60,13 @@ interface FaceDao {
                   AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isHidden = 0
+          AND EXISTS (
+              SELECT 1 FROM faces f
+              INNER JOIN core_media c ON f.mediaId = c.id
+              WHERE f.personId = p.id AND c.bucketName != 'Trash'
+                AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                AND c.filePath NOT IN (SELECT originalPath FROM vault_media)
+          )
         ORDER BY faceCount DESC
     """)
     fun observeAllVisiblePersons(): Flow<List<PersonEntity>>
@@ -115,6 +129,9 @@ interface FaceDao {
 
     @Query("SELECT COUNT(*) FROM faces WHERE personId = :personId")
     suspend fun getFaceCountForPerson(personId: Long): Int
+
+    @Query("DELETE FROM persons WHERE id NOT IN (SELECT DISTINCT personId FROM faces WHERE personId IS NOT NULL)")
+    suspend fun deletePersonsWithoutFaces(): Int
 
     @Query("UPDATE faces SET personId = NULL WHERE mediaId IN (:mediaIds) AND personId = :personId")
     suspend fun unassignFacesFromPerson(mediaIds: List<Long>, personId: Long)
