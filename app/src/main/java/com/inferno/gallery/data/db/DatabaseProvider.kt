@@ -468,7 +468,8 @@ object DatabaseProvider {
                             sourceCreatedAt INTEGER NOT NULL,
                             targetNameBefore TEXT,
                             targetCoverCropPathBefore TEXT,
-                            createdAt INTEGER NOT NULL
+                            createdAt INTEGER NOT NULL,
+                            FOREIGN KEY(targetPersonId) REFERENCES persons(id) ON DELETE CASCADE
                         )
                         """.trimIndent()
                     )
@@ -479,7 +480,9 @@ object DatabaseProvider {
                         CREATE TABLE IF NOT EXISTS person_merge_history_faces (
                             mergeId INTEGER NOT NULL,
                             faceId INTEGER NOT NULL,
-                            PRIMARY KEY(mergeId, faceId)
+                            PRIMARY KEY(mergeId, faceId),
+                            FOREIGN KEY(mergeId) REFERENCES person_merge_history(id) ON DELETE CASCADE,
+                            FOREIGN KEY(faceId) REFERENCES faces(id) ON DELETE CASCADE
                         )
                         """.trimIndent()
                     )
