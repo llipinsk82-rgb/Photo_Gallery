@@ -38,9 +38,9 @@
         android:largeHeap="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/blackserv_launcher"
+        android:icon="@drawable/blackserv_launcher_raster"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/blackserv_launcher_round"
+        android:roundIcon="@drawable/blackserv_launcher_raster"
         android:supportsRtl="true"
         android:theme="@style/Theme.PhotonGallery"
         android:enableOnBackInvokedCallback="false">
