@@ -131,6 +131,7 @@ class PeopleViewModel(application: Application) : AndroidViewModel(application) 
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allPersonsIncludingHidden: StateFlow<List<PersonEntity>> = faceDao.observeAllPersonsIncludingHidden()
+        .map(PeopleVisibilityPolicy::withVisiblePhotos)
         .flowOn(Dispatchers.IO)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
