@@ -5,7 +5,7 @@ package com.inferno.gallery.data.network
  */
 object BlackServReleasePolicy {
     private val versionTag = Regex(
-        "^v?\\d+\\.\\d+\\.\\d+-blackserv\\.\\d+$",
+        "^v?(\\d+)\\.(\\d+)\\.(\\d+)-blackserv\\.(\\d+)$",
         RegexOption.IGNORE_CASE
     )
 
