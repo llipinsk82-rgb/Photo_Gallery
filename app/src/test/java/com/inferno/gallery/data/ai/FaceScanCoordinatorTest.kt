@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class FaceScanCoordinatorTest {
     @Test
-    fun simultaneousScansOfSameMediaNeverOverlap() = runBlocking {
+    fun simultaneousScansOfSameMediaNeverOverlap(): Unit = runBlocking {
         val active = AtomicInteger(0)
         val peak = AtomicInteger(0)
 
@@ -36,7 +36,7 @@ class FaceScanCoordinatorTest {
     }
 
     @Test
-    fun differentMediaScansCanProceedIndependently() = runBlocking {
+    fun differentMediaScansCanProceedIndependently(): Unit = runBlocking {
         val firstEntered = CompletableDeferred<Unit>()
         val firstMayFinish = CompletableDeferred<Unit>()
         val secondEntered = CompletableDeferred<Unit>()
@@ -60,5 +60,6 @@ class FaceScanCoordinatorTest {
             firstMayFinish.complete(Unit)
             first.await()
         }
+        Unit
     }
 }
