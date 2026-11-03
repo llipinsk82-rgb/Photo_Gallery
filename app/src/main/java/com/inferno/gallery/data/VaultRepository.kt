@@ -76,40 +76,61 @@ class VaultRepository(
                         val extension = displayName.substringAfterLast(".", "")
                         val vaultFileName = "${UUID.randomUUID()}.$extension"
 
-                        // Copy file to vault directory
+                        // The original must survive both a short copy and a failed Room insert.
                         val vaultFile = File(vaultDir, vaultFileName)
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            vaultFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
+                        val entity = VaultMediaEntity(
+                            originalUri = uri.toString(),
+                            originalPath = filePath,
+                            originalBucket = originalBucket,
+                            originalRelativePath = relativePath,
+                            fileName = displayName,
+                            vaultFileName = vaultFileName,
+                            mimeType = mimeType,
+                            isVideo = isVideo,
+                            durationMs = duration,
+                            size = size,
+                            dateAdded = dateAdded,
+                            dateModified = dateModified,
+                            dateHidden = System.currentTimeMillis() / 1000L
+                        )
 
-                        // Verify copy succeeded
-                        if (vaultFile.exists() && vaultFile.length() > 0) {
-                            entities.add(
-                                VaultMediaEntity(
-                                    originalUri = uri.toString(),
-                                    originalPath = filePath,
-                                    originalBucket = originalBucket,
-                                    originalRelativePath = relativePath,
-                                    fileName = displayName,
-                                    vaultFileName = vaultFileName,
-                                    mimeType = mimeType,
-                                    isVideo = isVideo,
-                                    durationMs = duration,
-                                    size = size,
-                                    dateAdded = dateAdded,
-                                    dateModified = dateModified,
-                                    dateHidden = System.currentTimeMillis() / 1000
-                                )
+                        var databaseCommitAttempted = false
+                        var persistedId: Long? = null
+                        try {
+                            val originalDeleted = VaultTransferSafety.commitCopySuspending(
+                                verifiedCopy = {
+                                    VaultCopyVerifier.copyAndVerify(
+                                        source = { context.contentResolver.openInputStream(uri) },
+                                        destination = { vaultFile.outputStream() },
+                                        readBack = { vaultFile.inputStream() },
+                                        expectedBytes = size
+                                    )
+                                },
+                                commitDestination = {
+                                    databaseCommitAttempted = true
+                                    persistedId = vaultDao.insertAll(listOf(entity)).singleOrNull()
+                                    persistedId != null
+                                },
+                                discardSource = {
+                                    vaultFile.exists() && vaultFile.length() == size &&
+                                        context.contentResolver.delete(uri, null, null) > 0
+                                }
                             )
-
-                            // Delete from MediaStore so it disappears from gallery
-                            try {
-                                context.contentResolver.delete(uri, null, null)
-                            } catch (e: Exception) {
-                                android.util.Log.w("VaultRepository", "MediaStore delete failed for $uri, trying recoverableSecurityException", e)
+                            if (originalDeleted) {
+                                insertedIds.add(requireNotNull(persistedId))
+                                entities.add(entity)
+                            } else {
+                                // Keep both copies and the vault row; source removal was not confirmed.
+                                android.util.Log.w("VaultRepository", "Original MediaStore removal not confirmed: " + uri)
                             }
+                        } catch (transferError: Exception) {
+                            if (!databaseCommitAttempted) {
+                                // Partial/unverified vault copy. The original is still in MediaStore.
+                                vaultFile.delete()
+                            }
+                            // If DAO persistence or original deletion is ambiguous, preserve
+                            // the verified vault file for recovery rather than discarding it.
+                            android.util.Log.e("VaultRepository", "Hide not completed: " + uri, transferError)
                         }
                     }
                 }
@@ -120,8 +141,6 @@ class VaultRepository(
 
         // Insert vault records
         if (entities.isNotEmpty()) {
-            insertedIds.addAll(vaultDao.insertAll(entities))
-
             // Immediately purge hidden media from Room database tables so they NEVER show anywhere in the app
             try {
                 val db = DatabaseProvider.getDatabase(context)
@@ -198,29 +217,54 @@ class VaultRepository(
 
                 val insertUri = context.contentResolver.insert(collection, values)
                 if (insertUri != null) {
-                    // Write file content
-                    context.contentResolver.openOutputStream(insertUri)?.use { output ->
-                        vaultFile.inputStream().use { input ->
-                            input.copyTo(output)
+                    // A failed or truncated destination must never consume the only vault copy.
+                    var published = false
+                    val vaultFileRemoved = try {
+                        VaultTransferSafety.commitCopy(
+                            verifiedCopy = {
+                                VaultCopyVerifier.copyAndVerify(
+                                    source = { vaultFile.inputStream() },
+                                    destination = { context.contentResolver.openOutputStream(insertUri, "w") },
+                                    readBack = { context.contentResolver.openInputStream(insertUri) },
+                                    expectedBytes = vaultFile.length()
+                                )
+                            },
+                            commitDestination = {
+                                val finalValues = ContentValues().apply {
+                                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+                                    put(MediaStore.MediaColumns.DATE_MODIFIED, item.dateModified)
+                                    if (item.isVideo) {
+                                        put(MediaStore.Video.Media.DATE_TAKEN, item.dateAdded * 1000L)
+                                    } else {
+                                        put(MediaStore.Images.Media.DATE_TAKEN, item.dateAdded * 1000L)
+                                    }
+                                }
+                                published = context.contentResolver.update(insertUri, finalValues, null, null) > 0
+                                published
+                            },
+                            discardSource = { vaultFile.delete() }
+                        )
+                    } catch (copyError: Exception) {
+                        // Delete only our newly created, still-unpublished destination.
+                        // Once published, retain it on ambiguous failure: data safety first.
+                        if (!published) {
+                            try {
+                                context.contentResolver.delete(insertUri, null, null)
+                            } catch (cleanupError: Exception) {
+                                android.util.Log.w("VaultRepository", "Could not clean pending restore", cleanupError)
+                            }
                         }
+                        throw copyError
                     }
 
-                    // Mark as complete, re-set dates (some MediaStore impls reset dates on write)
-                    // DATE_ADDED is read-only on API 29+, but DATE_MODIFIED can be updated
-                    val finalValues = ContentValues().apply {
-                        put(MediaStore.MediaColumns.IS_PENDING, 0)
-                        put(MediaStore.MediaColumns.DATE_MODIFIED, item.dateModified)
-                        // Re-set DATE_TAKEN to ensure grouping stays correct
-                        if (item.isVideo) {
-                            put(MediaStore.Video.Media.DATE_TAKEN, item.dateAdded * 1000L)
-                        } else {
-                            put(MediaStore.Images.Media.DATE_TAKEN, item.dateAdded * 1000L)
-                        }
+                    if (!vaultFileRemoved) {
+                        // The fully restored MediaStore item now coexists with its vault source.
+                        // Keep the vault row; a retry/recovery must not silently lose either copy.
+                        android.util.Log.w("VaultRepository", "Vault source could not be removed after restore: " + item.fileName)
+                        continue
                     }
-                    context.contentResolver.update(insertUri, finalValues, null, null)
 
-                    // Pre-insert a CoreMediaEntity with the ORIGINAL dateAdded into Room
-                    // so the gallery groups this item correctly (not under "Today")
+                    // Best-effort original timestamp in Room; the next sync can repair it.
                     try {
                         val newId = ContentUris.parseId(insertUri)
                         val db = DatabaseProvider.getDatabase(context)
@@ -228,9 +272,9 @@ class VaultRepository(
                             CoreMediaEntity(
                                 id = newId,
                                 uriString = insertUri.toString(),
-                                filePath = "", // Will be filled by next MediaSyncWorker run
+                                filePath = "",
                                 bucketName = item.originalBucket,
-                                dateAdded = item.dateAdded, // Original date!
+                                dateAdded = item.dateAdded,
                                 dateModified = item.dateModified,
                                 size = item.size,
                                 name = item.fileName,
@@ -240,11 +284,9 @@ class VaultRepository(
                             )
                         ))
                     } catch (dbEx: Exception) {
-                        android.util.Log.w("VaultRepository", "Pre-insert Room record failed (sync will fix): ${dbEx.message}")
+                        android.util.Log.w("VaultRepository", "Pre-insert Room record failed (sync will fix)", dbEx)
                     }
 
-                    // Delete vault file and record
-                    vaultFile.delete()
                     vaultDao.deleteByIds(listOf(item.id))
                     count++
                 }

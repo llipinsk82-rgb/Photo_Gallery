@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.max
@@ -53,6 +54,19 @@ object FaceScanHelper {
         engine: FaceRecognitionEngine,
         clusteringManager: FaceClusteringManager,
         detector: FaceDetector? = null
+    ): Int = FaceScanCoordinator.withMediaLock(mediaId) {
+        scanSingleMediaLocked(context, mediaId, filePath, uri, database, engine, clusteringManager, detector)
+    }
+
+    private suspend fun scanSingleMediaLocked(
+        context: Context,
+        mediaId: Long,
+        filePath: String,
+        uri: Uri,
+        database: GalleryDatabase,
+        engine: FaceRecognitionEngine,
+        clusteringManager: FaceClusteringManager,
+        detector: FaceDetector?
     ): Int = withContext(Dispatchers.IO) {
         if (!FaceRecognitionEngine.isSupported() || !engine.isModelDownloaded()) {
             return@withContext 0
@@ -69,7 +83,7 @@ object FaceScanHelper {
             faceDao.insertFaceStatus(
                 MediaFaceStatusEntity(
                     mediaId = mediaId,
-                    faceCount = 0,
+                    faceCount = FaceScanSafety.RETRYABLE_FAILURE,
                     scannedAt = System.currentTimeMillis()
                 )
             )
@@ -82,17 +96,43 @@ object FaceScanHelper {
             return@withContext 0
         }
 
+        var diagnostics: FaceScanDiagnostics? = null
         try {
             val inputImage = InputImage.fromBitmap(sampledBitmap, 0)
             val detectedFaces = Tasks.await(activeDetector.process(inputImage))
+            val scanDiagnostics = FaceScanDiagnostics(detectedFaces.size)
+            diagnostics = scanDiagnostics
             var savedFaceCount = 0
+            var hadEmbeddingFailure = false
+
+            // Rescanning must keep existing face/person assignments and never duplicate them.
+            val indexedBounds = faceDao.getFacesByMediaId(mediaId).map {
+                NormalizedFaceBox(it.bboxLeft, it.bboxTop, it.bboxRight, it.bboxBottom)
+            }.toMutableList()
 
             for ((faceIndex, face) in detectedFaces.withIndex()) {
                 if (sampledBitmap.isRecycled) break
                 val box = face.boundingBox
-                if (box.width() < 20 || box.height() < 20) continue
+                if (box.width() < 20 || box.height() < 20) {
+                    scanDiagnostics.record(FaceScanOutcome.TOO_SMALL)
+                    continue
+                }
                 // Relaxed angle thresholds for natural candid shots (yaw 60°, pitch 48°)
-                if (abs(face.headEulerAngleY) > 60f || abs(face.headEulerAngleX) > 48f) continue
+                if (abs(face.headEulerAngleY) > 60f || abs(face.headEulerAngleX) > 48f) {
+                    scanDiagnostics.record(FaceScanOutcome.POSE_FILTERED)
+                    continue
+                }
+
+                val bounds = NormalizedFaceBox(
+                    (box.left.toFloat() / sampledBitmap.width).coerceIn(0f, 1f),
+                    (box.top.toFloat() / sampledBitmap.height).coerceIn(0f, 1f),
+                    (box.right.toFloat() / sampledBitmap.width).coerceIn(0f, 1f),
+                    (box.bottom.toFloat() / sampledBitmap.height).coerceIn(0f, 1f)
+                )
+                if (FaceScanSafety.isAlreadyIndexed(bounds, indexedBounds)) {
+                    scanDiagnostics.record(FaceScanOutcome.EXISTING)
+                    continue
+                }
 
                 val leftEye = face.getLandmark(FaceLandmark.LEFT_EYE)?.position
                 val rightEye = face.getLandmark(FaceLandmark.RIGHT_EYE)?.position
@@ -112,12 +152,22 @@ object FaceScanHelper {
                 } else {
                     cropFaceBoundingBox(sampledBitmap, box)
                 }
-                if (aligned112 == null || aligned112.isRecycled) continue
+                if (aligned112 == null || aligned112.isRecycled) {
+                    scanDiagnostics.record(FaceScanOutcome.ALIGNMENT_FAILED)
+                    hadEmbeddingFailure = true
+                    continue
+                }
 
                 try {
-                    val embedding = engine.extractEmbedding(aligned112) ?: continue
+                    val embedding = engine.extractEmbedding(aligned112)
+                    if (embedding == null) {
+                        scanDiagnostics.record(FaceScanOutcome.EMBEDDING_FAILED)
+                        hadEmbeddingFailure = true
+                        continue
+                    }
 
-                    val cropFile = File(faceCropDir, "face_${mediaId}_${faceIndex}.webp")
+                    // Do not overwrite a saved person's portrait when detection ordering changes.
+                    val cropFile = File(faceCropDir, "face_${mediaId}_${faceIndex}_${UUID.randomUUID()}.webp")
                     val avatarBitmap = extractNaturalPortraitCrop(sampledBitmap, box, 160)
                     try {
                         FileOutputStream(cropFile).use { out ->
@@ -129,25 +179,22 @@ object FaceScanHelper {
                         }
                     }
 
-                    val normBboxLeft = (box.left.toFloat() / sampledBitmap.width).coerceIn(0f, 1f)
-                    val normBboxTop = (box.top.toFloat() / sampledBitmap.height).coerceIn(0f, 1f)
-                    val normBboxRight = (box.right.toFloat() / sampledBitmap.width).coerceIn(0f, 1f)
-                    val normBboxBottom = (box.bottom.toFloat() / sampledBitmap.height).coerceIn(0f, 1f)
-
                     val poseScore = 1f - (abs(face.headEulerAngleY) / 60f * 0.5f + abs(face.headEulerAngleX) / 48f * 0.5f)
                     val qualityScore = poseScore.coerceIn(0.1f, 1.0f)
 
                     clusteringManager.assignFaceToCluster(
                         mediaId = mediaId,
                         embedding = embedding,
-                        bboxLeft = normBboxLeft,
-                        bboxTop = normBboxTop,
-                        bboxRight = normBboxRight,
-                        bboxBottom = normBboxBottom,
+                        bboxLeft = bounds.left,
+                        bboxTop = bounds.top,
+                        bboxRight = bounds.right,
+                        bboxBottom = bounds.bottom,
                         qualityScore = qualityScore,
                         cropCachePath = cropFile.absolutePath
                     )
+                    indexedBounds.add(bounds)
                     savedFaceCount++
+                    scanDiagnostics.record(FaceScanOutcome.SAVED)
                 } finally {
                     if (aligned112 !== sampledBitmap && !aligned112.isRecycled) {
                         aligned112.recycle()
@@ -155,20 +202,23 @@ object FaceScanHelper {
                 }
             }
 
+            Log.i(TAG, scanDiagnostics.summary(mediaId))
+            val totalIndexedFaces = faceDao.getFacesByMediaId(mediaId).size
             faceDao.insertFaceStatus(
                 MediaFaceStatusEntity(
                     mediaId = mediaId,
-                    faceCount = savedFaceCount,
+                    faceCount = if (hadEmbeddingFailure) FaceScanSafety.RETRYABLE_FAILURE else totalIndexedFaces,
                     scannedAt = System.currentTimeMillis()
                 )
             )
             savedFaceCount
         } catch (e: Exception) {
             Log.w(TAG, "Error scanning faces for media $mediaId: ${e.message}")
+            diagnostics?.let { Log.w(TAG, it.summary(mediaId)) }
             faceDao.insertFaceStatus(
                 MediaFaceStatusEntity(
                     mediaId = mediaId,
-                    faceCount = 0,
+                    faceCount = FaceScanSafety.RETRYABLE_FAILURE,
                     scannedAt = System.currentTimeMillis()
                 )
             )

@@ -171,8 +171,6 @@ fun SettingsScreen(
     val viewerDynamicColor by viewModel.viewerDynamicColor.collectAsState()
     val viewerZoomMinimapEnabled by viewModel.viewerZoomMinimapEnabled.collectAsState()
     val confirmDelete by viewModel.confirmDeleteEnabled.collectAsState()
-    val autoCleanTrash by viewModel.autoCleanTrashEnabled.collectAsState()
-    val autoCleanDays by viewModel.autoCleanTrashDays.collectAsState()
     val autoplayWithSound by viewModel.autoplayWithSoundEnabled.collectAsState()
     val autoCheckUpdates by viewModel.autoCheckUpdates.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
@@ -1855,7 +1853,7 @@ fun SettingsScreen(
                         }
 
                         "Privacy & Security" -> {
-                            val recycleBinItems = mutableListOf<@Composable () -> Unit>(
+                            val recycleBinItems = listOf<@Composable () -> Unit>(
                                 {
                                     SwitchSettingItem(
                                         title = "Confirm Deletion",
@@ -1868,61 +1866,14 @@ fun SettingsScreen(
                                 {
                                     SwitchSettingItem(
                                         title = "Auto-clean Recycle Bin",
-                                        subtitle = "Automatically delete old items in the recycle bin",
+                                        subtitle = "Android manages the recycle bin (usually about 30 days). Custom cleanup is paused to protect your photos.",
                                         icon = ImageVector.vectorResource(R.drawable.ic_ms_delete),
-                                        checked = autoCleanTrash,
-                                        onCheckedChange = { viewModel.setAutoCleanTrashEnabled(it) }
+                                        checked = false,
+                                        onCheckedChange = {},
+                                        enabled = false
                                     )
                                 }
                             )
-
-                            if (autoCleanTrash) {
-                                recycleBinItems.add {
-                                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Text(text = "Retention Period", style = MaterialTheme.typography.bodyLarge)
-                                            Surface(
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.secondaryContainer
-                                            ) {
-                                                Text(
-                                                    text = "$autoCleanDays Days",
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        SingleChoiceSegmentedButtonRow(
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            SegmentedButton(
-                                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
-                                                onClick = { viewModel.setAutoCleanTrashDays(7) },
-                                                selected = autoCleanDays == 7,
-                                                label = { Text("7 Days") }
-                                            )
-                                            SegmentedButton(
-                                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
-                                                onClick = { viewModel.setAutoCleanTrashDays(14) },
-                                                selected = autoCleanDays == 14,
-                                                label = { Text("14 Days") }
-                                            )
-                                            SegmentedButton(
-                                                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
-                                                onClick = { viewModel.setAutoCleanTrashDays(30) },
-                                                selected = autoCleanDays == 30,
-                                                label = { Text("30 Days") }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
 
                             SettingsGroupCard(
                                 title = "Recycle Bin & Deletion",

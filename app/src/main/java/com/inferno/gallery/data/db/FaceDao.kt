@@ -38,7 +38,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isPromoted = 1 AND p.isHidden = 0
           AND EXISTS (
@@ -57,7 +58,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isHidden = 0
           AND EXISTS (
@@ -79,7 +81,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isHidden = 1
         ORDER BY faceCount DESC
@@ -91,7 +94,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         ORDER BY p.isHidden ASC, faceCount DESC
     """)
@@ -105,7 +109,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.name IS NOT NULL AND LOWER(p.name) LIKE '%' || LOWER(:query) || '%' AND p.isHidden = 0
         ORDER BY faceCount DESC
@@ -173,7 +178,6 @@ interface FaceDao {
         FROM faces f
         LEFT JOIN persons p ON f.personId = p.id
         WHERE f.mediaId = :mediaId AND (p.isHidden IS NULL OR p.isHidden = 0)
-        GROUP BY COALESCE(f.personId, -f.id)
     """)
     fun observePeopleForMedia(mediaId: Long): Flow<List<MediaPersonInfo>>
 
@@ -266,19 +270,29 @@ interface FaceDao {
         WHERE isVideo = 0 
           AND bucketName != 'Trash' 
           AND uriString NOT IN (SELECT originalUri FROM vault_media)
-          AND id NOT IN (SELECT mediaId FROM media_face_status)
+          AND id NOT IN (
+              SELECT mediaId FROM media_face_status
+              WHERE faceCount >= 0 OR scannedAt > :retryCutoffMs
+          )
         ORDER BY dateAdded DESC
     """)
-    suspend fun getUnindexedMediaIds(): List<Long>
+    suspend fun getUnindexedMediaIds(
+        retryCutoffMs: Long = System.currentTimeMillis() - com.inferno.gallery.data.ai.FaceScanSafety.RETRY_DELAY_MS
+    ): List<Long>
 
     @Query("""
         SELECT COUNT(id) FROM core_media 
         WHERE isVideo = 0 
           AND bucketName != 'Trash' 
           AND uriString NOT IN (SELECT originalUri FROM vault_media)
-          AND id NOT IN (SELECT mediaId FROM media_face_status)
+          AND id NOT IN (
+              SELECT mediaId FROM media_face_status
+              WHERE faceCount >= 0 OR scannedAt > :retryCutoffMs
+          )
     """)
-    fun observeUnindexedCount(): Flow<Int>
+    fun observeUnindexedCount(
+        retryCutoffMs: Long = System.currentTimeMillis() - com.inferno.gallery.data.ai.FaceScanSafety.RETRY_DELAY_MS
+    ): Flow<Int>
 
     // ── Face Scan Status Operations ──
 

@@ -520,8 +520,9 @@ fun ImageEditorScreen(
     }
 
     // ── Save function ────────────────────────────────────────────────────
-    fun saveImage(overwrite: Boolean) {
+    fun saveImage() {
         val b = originalBitmap ?: return
+        if (isSaving) return
         isSaving = true
         coroutineScope.launch(Dispatchers.Default) {
             try {
@@ -591,35 +592,46 @@ fun ImageEditorScreen(
                     canvas.drawRect(0f, 0f, resultBitmap.width.toFloat(), resultBitmap.height.toFloat(), vignettePaint)
                 }
 
-                // Write to MediaStore
+                // Save a new pending JPEG: never write to the original URI.
+                // Publish it only after a full read-back proves it was saved.
                 withContext(Dispatchers.IO) {
-                    if (overwrite) {
-                        context.contentResolver.openOutputStream(imageUri, "w")?.use { out ->
-                            resultBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                    val values = ContentValues().apply {
+                        put(MediaStore.Images.Media.DISPLAY_NAME, "Photon_Edit_${System.currentTimeMillis()}.jpg")
+                        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                        put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/BlackServ Gallery")
+                        put(MediaStore.Images.Media.IS_PENDING, 1)
+                    }
+                    val newUri = context.contentResolver.insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        values
+                    ) ?: throw java.io.IOException("Cannot create a pending image copy")
+
+                    try {
+                        com.inferno.gallery.data.EditorOutputVerifier.writeAndVerify(
+                            destination = { context.contentResolver.openOutputStream(newUri, "w") },
+                            readBack = { context.contentResolver.openInputStream(newUri) },
+                            encode = { out -> resultBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out) }
+                        )
+                        values.clear()
+                        values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                        if (context.contentResolver.update(newUri, values, null, null) <= 0) {
+                            throw java.io.IOException("Could not publish verified image copy")
                         }
-                    } else {
-                        val values = ContentValues().apply {
-                            put(MediaStore.Images.Media.DISPLAY_NAME, "Photon_Edit_${System.currentTimeMillis()}.jpg")
-                            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/BlackServ Gallery")
-                            put(MediaStore.Images.Media.IS_PENDING, 1)
+                    } catch (error: Exception) {
+                        // The original remains untouched. Remove only the incomplete new copy.
+                        try {
+                            context.contentResolver.delete(newUri, null, null)
+                        } catch (cleanupError: Exception) {
+                            error.addSuppressed(cleanupError)
                         }
-                        val newUri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-                        if (newUri != null) {
-                            context.contentResolver.openOutputStream(newUri)?.use { out ->
-                                resultBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
-                            }
-                            values.clear()
-                            values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                            context.contentResolver.update(newUri, values, null, null)
-                        }
+                        throw error
                     }
                 }
 
                 withContext(Dispatchers.Main) {
                     isSaving = false
                     view.thud()
-                    Toast.makeText(context, if (overwrite) "Saved changes" else "Saved as copy", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Saved as copy", Toast.LENGTH_SHORT).show()
                     onSaved()
                 }
             } catch (e: Exception) {
@@ -1108,15 +1120,13 @@ fun ImageEditorScreen(
                                 text = { Text("Save as Copy") },
                                 onClick = {
                                     showSaveMenu = false
-                                    saveImage(overwrite = false)
+                                    saveImage()
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Overwrite Original") },
-                                onClick = {
-                                    showSaveMenu = false
-                                    saveImage(overwrite = true)
-                                }
+                                text = { Text("Overwrite Original (temporarily unavailable)") },
+                                onClick = {},
+                                enabled = false
                             )
                         }
                     }
