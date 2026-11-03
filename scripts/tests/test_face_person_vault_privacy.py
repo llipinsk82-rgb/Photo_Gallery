@@ -41,17 +41,23 @@ class FacePersonVaultPrivacyTest(unittest.TestCase):
 
             INSERT INTO persons VALUES
                 (10,'Julia',NULL,NULL,1,0,0,1),
-                (11,'Vanessa',NULL,NULL,1,1,0,1);
+                (11,'Vanessa',NULL,NULL,1,1,0,1),
+                (12,'Orphan',NULL,NULL,1,0,0,1);
             INSERT INTO core_media VALUES
                 (1,'Camera','content://new-julia','/private/julia.jpg'),
                 (2,'Camera','content://public-julia','/public/julia.jpg'),
                 (3,'Camera','content://new-vanessa','/private/vanessa.jpg'),
-                (4,'Camera','content://public-vanessa','/public/vanessa.jpg');
+                (4,'Camera','content://public-vanessa','/public/vanessa.jpg'),
+                (5,'Trash','content://trash-julia','/trash/julia.jpg'),
+                (6,'Trash','content://trash-vanessa','/trash/vanessa.jpg'),
+                (7,'Camera','content://new-orphan','/private/orphan.jpg');
             INSERT INTO faces VALUES
-                (101,1,10),(102,2,10),(103,3,11),(104,4,11);
+                (101,1,10),(102,2,10),(103,3,11),(104,4,11),
+                (105,5,10),(106,6,11),(107,7,12);
             INSERT INTO vault_media VALUES
                 ('content://old-julia','/private/julia.jpg'),
-                ('content://old-vanessa','/private/vanessa.jpg');
+                ('content://old-vanessa','/private/vanessa.jpg'),
+                ('content://old-orphan','/private/orphan.jpg');
             """
         )
 
@@ -72,7 +78,14 @@ class FacePersonVaultPrivacyTest(unittest.TestCase):
 
     def test_hide_show_sheet_count_ignores_vault_photo_by_path(self):
         rows = self.db.execute(room_query("observeAllPersonsIncludingHidden")).fetchall()
-        self.assertEqual([(10, 1), (11, 1)], sorted((r["id"], r["faceCount"]) for r in rows))
+        self.assertEqual([(10, 1), (11, 1), (12, 0)],
+                         sorted((r["id"], r["faceCount"]) for r in rows))
+
+    def test_vault_only_person_has_no_public_photos(self):
+        rows = self.db.execute(room_query("observeAllPersonsIncludingHidden")).fetchall()
+        self.assertEqual(0, next(r["faceCount"] for r in rows if r["id"] == 12))
+        self.assertNotIn(12, [r["id"] for r in
+                             self.db.execute(room_query("observeAllVisiblePersons")).fetchall()])
 
     def test_name_search_count_ignores_vault_photo_by_path(self):
         rows = self.db.execute(room_query("searchPersonsByName"), {"query": "Jul"}).fetchall()
