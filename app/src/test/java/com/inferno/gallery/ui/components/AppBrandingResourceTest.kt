@@ -29,6 +29,15 @@ class AppBrandingResourceTest {
     }
 
     @Test
+    fun launcherUsesSingleApprovedRasterWithoutAdaptiveMaskLayers() {
+        val manifest = source("AndroidManifest.xml")
+        assertTrue(manifest.contains("""android:icon="@drawable/blackserv_launcher_raster" """.trim()))
+        assertTrue(manifest.contains("""android:roundIcon="@drawable/blackserv_launcher_raster" """.trim()))
+        assertFalse(manifest.contains("""android:icon="@mipmap/blackserv_launcher" """.trim()))
+        assertFalse(manifest.contains("""android:roundIcon="@mipmap/blackserv_launcher_round" """.trim()))
+    }
+
+    @Test
     fun splashBackgroundMatchesLightAndDarkAppThemes() {
         val themes = source("res/values/themes.xml")
         assertTrue(themes.contains("windowSplashScreenBackground\">@color/gallery_splash_background"))
