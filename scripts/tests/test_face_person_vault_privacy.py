@@ -14,7 +14,7 @@ SOURCE = Path(__file__).resolve().parents[2] / "app/src/main/java/com/inferno/ga
 
 def room_query(name):
     text = SOURCE.read_text(encoding="utf-8")
-    pattern = (r'@Query\("""\s*(SELECT.*?)\s*"""\)\s*'
+    pattern = (r'@Query\("""\s*(SELECT(?:(?!""").)*?)\s*"""\)\s*'
                r'(?:suspend\s+)?fun\s+' + re.escape(name) + r'\(')
     match = re.search(pattern, text, flags=re.DOTALL)
     if not match:
