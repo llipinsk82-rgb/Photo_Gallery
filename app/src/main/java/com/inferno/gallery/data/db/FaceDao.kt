@@ -38,7 +38,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isPromoted = 1 AND p.isHidden = 0
           AND EXISTS (
@@ -57,7 +58,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isHidden = 0
           AND EXISTS (
@@ -79,7 +81,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.isHidden = 1
         ORDER BY faceCount DESC
@@ -91,7 +94,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         ORDER BY p.isHidden ASC, faceCount DESC
     """)
@@ -105,7 +109,8 @@ interface FaceDao {
                (SELECT COUNT(DISTINCT f.mediaId) FROM faces f 
                 INNER JOIN core_media c ON f.mediaId = c.id 
                 WHERE f.personId = p.id AND c.bucketName != 'Trash' 
-                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)) AS faceCount
+                  AND c.uriString NOT IN (SELECT originalUri FROM vault_media)
+                  AND c.filePath NOT IN (SELECT originalPath FROM vault_media)) AS faceCount
         FROM persons p
         WHERE p.name IS NOT NULL AND LOWER(p.name) LIKE '%' || LOWER(:query) || '%' AND p.isHidden = 0
         ORDER BY faceCount DESC
