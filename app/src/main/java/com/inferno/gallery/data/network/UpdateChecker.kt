@@ -68,17 +68,20 @@ object UpdateChecker {
                     val trimmed = responseBody.trimStart()
                     if (trimmed.startsWith("[")) {
                         val array = JSONArray(trimmed)
-                        var picked: JSONObject? = null
-                        for (i in 0 until array.length()) {
-                            val item = array.optJSONObject(i) ?: continue
-                            // Release tags are verified; GitHub Releases are not branch-scoped.
-                            if (!item.optBoolean("draft", false) &&
-                                BlackServReleasePolicy.isBlackServTag(item.optString("tag_name", ""))) {
-                                picked = item
-                                break
+                        // GitHub may return v9 before v10. Rank ALL eligible
+                        // releases by their numeric version, not API array position.
+                        val eligible = (0 until array.length())
+                            .mapNotNull { array.optJSONObject(it) }
+                            .filter { item ->
+                                !item.optBoolean("draft", false) &&
+                                    BlackServReleasePolicy.isBlackServTag(item.optString("tag_name", ""))
                             }
+                        val newestTag = BlackServReleasePolicy.newestTag(
+                            eligible.map { it.optString("tag_name", "") }
+                        )
+                        eligible.firstOrNull { item ->
+                            item.optString("tag_name", "").trim() == newestTag?.trim()
                         }
-                        picked
                     } else {
                         val obj = JSONObject(trimmed)
                         if (!obj.optBoolean("draft", false) &&
