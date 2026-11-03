@@ -83,9 +83,12 @@ object FaceScanHelper {
             return@withContext 0
         }
 
+        var diagnostics: FaceScanDiagnostics? = null
         try {
             val inputImage = InputImage.fromBitmap(sampledBitmap, 0)
             val detectedFaces = Tasks.await(activeDetector.process(inputImage))
+            val scanDiagnostics = FaceScanDiagnostics(detectedFaces.size)
+            diagnostics = scanDiagnostics
             var savedFaceCount = 0
             var hadEmbeddingFailure = false
 
@@ -97,9 +100,15 @@ object FaceScanHelper {
             for ((faceIndex, face) in detectedFaces.withIndex()) {
                 if (sampledBitmap.isRecycled) break
                 val box = face.boundingBox
-                if (box.width() < 20 || box.height() < 20) continue
+                if (box.width() < 20 || box.height() < 20) {
+                    scanDiagnostics.record(FaceScanOutcome.TOO_SMALL)
+                    continue
+                }
                 // Relaxed angle thresholds for natural candid shots (yaw 60°, pitch 48°)
-                if (abs(face.headEulerAngleY) > 60f || abs(face.headEulerAngleX) > 48f) continue
+                if (abs(face.headEulerAngleY) > 60f || abs(face.headEulerAngleX) > 48f) {
+                    scanDiagnostics.record(FaceScanOutcome.POSE_FILTERED)
+                    continue
+                }
 
                 val bounds = NormalizedFaceBox(
                     (box.left.toFloat() / sampledBitmap.width).coerceIn(0f, 1f),
@@ -107,7 +116,10 @@ object FaceScanHelper {
                     (box.right.toFloat() / sampledBitmap.width).coerceIn(0f, 1f),
                     (box.bottom.toFloat() / sampledBitmap.height).coerceIn(0f, 1f)
                 )
-                if (FaceScanSafety.isAlreadyIndexed(bounds, indexedBounds)) continue
+                if (FaceScanSafety.isAlreadyIndexed(bounds, indexedBounds)) {
+                    scanDiagnostics.record(FaceScanOutcome.EXISTING)
+                    continue
+                }
 
                 val leftEye = face.getLandmark(FaceLandmark.LEFT_EYE)?.position
                 val rightEye = face.getLandmark(FaceLandmark.RIGHT_EYE)?.position
@@ -128,6 +140,7 @@ object FaceScanHelper {
                     cropFaceBoundingBox(sampledBitmap, box)
                 }
                 if (aligned112 == null || aligned112.isRecycled) {
+                    scanDiagnostics.record(FaceScanOutcome.ALIGNMENT_FAILED)
                     hadEmbeddingFailure = true
                     continue
                 }
@@ -135,6 +148,7 @@ object FaceScanHelper {
                 try {
                     val embedding = engine.extractEmbedding(aligned112)
                     if (embedding == null) {
+                        scanDiagnostics.record(FaceScanOutcome.EMBEDDING_FAILED)
                         hadEmbeddingFailure = true
                         continue
                     }
@@ -167,6 +181,7 @@ object FaceScanHelper {
                     )
                     indexedBounds.add(bounds)
                     savedFaceCount++
+                    scanDiagnostics.record(FaceScanOutcome.SAVED)
                 } finally {
                     if (aligned112 !== sampledBitmap && !aligned112.isRecycled) {
                         aligned112.recycle()
@@ -174,6 +189,7 @@ object FaceScanHelper {
                 }
             }
 
+            Log.i(TAG, scanDiagnostics.summary(mediaId))
             val totalIndexedFaces = faceDao.getFacesByMediaId(mediaId).size
             faceDao.insertFaceStatus(
                 MediaFaceStatusEntity(
@@ -185,6 +201,7 @@ object FaceScanHelper {
             savedFaceCount
         } catch (e: Exception) {
             Log.w(TAG, "Error scanning faces for media $mediaId: ${e.message}")
+            diagnostics?.let { Log.w(TAG, it.summary(mediaId)) }
             faceDao.insertFaceStatus(
                 MediaFaceStatusEntity(
                     mediaId = mediaId,
