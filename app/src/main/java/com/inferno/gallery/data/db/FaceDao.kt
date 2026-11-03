@@ -173,7 +173,6 @@ interface FaceDao {
         FROM faces f
         LEFT JOIN persons p ON f.personId = p.id
         WHERE f.mediaId = :mediaId AND (p.isHidden IS NULL OR p.isHidden = 0)
-        GROUP BY COALESCE(f.personId, -f.id)
     """)
     fun observePeopleForMedia(mediaId: Long): Flow<List<MediaPersonInfo>>
 
