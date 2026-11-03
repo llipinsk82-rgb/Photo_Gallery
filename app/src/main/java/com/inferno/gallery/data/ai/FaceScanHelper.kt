@@ -54,7 +54,8 @@ object FaceScanHelper {
         engine: FaceRecognitionEngine,
         clusteringManager: FaceClusteringManager,
         detector: FaceDetector? = null
-    ): Int = withContext(Dispatchers.IO) {
+    ): Int = FaceScanCoordinator.withMediaLock(mediaId) {
+        withContext(Dispatchers.IO) {
         if (!FaceRecognitionEngine.isSupported() || !engine.isModelDownloaded()) {
             return@withContext 0
         }
@@ -217,6 +218,7 @@ object FaceScanHelper {
             if (ownDetector) {
                 runCatching { activeDetector.close() }
             }
+        }
         }
     }
 
