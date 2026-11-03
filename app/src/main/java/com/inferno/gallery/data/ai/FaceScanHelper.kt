@@ -55,7 +55,19 @@ object FaceScanHelper {
         clusteringManager: FaceClusteringManager,
         detector: FaceDetector? = null
     ): Int = FaceScanCoordinator.withMediaLock(mediaId) {
-        withContext(Dispatchers.IO) {
+        scanSingleMediaLocked(context, mediaId, filePath, uri, database, engine, clusteringManager, detector)
+    }
+
+    private suspend fun scanSingleMediaLocked(
+        context: Context,
+        mediaId: Long,
+        filePath: String,
+        uri: Uri,
+        database: GalleryDatabase,
+        engine: FaceRecognitionEngine,
+        clusteringManager: FaceClusteringManager,
+        detector: FaceDetector?
+    ): Int = withContext(Dispatchers.IO) {
         if (!FaceRecognitionEngine.isSupported() || !engine.isModelDownloaded()) {
             return@withContext 0
         }
@@ -218,7 +230,6 @@ object FaceScanHelper {
             if (ownDetector) {
                 runCatching { activeDetector.close() }
             }
-        }
         }
     }
 
